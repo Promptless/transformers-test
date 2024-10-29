@@ -1,3 +1,4 @@
+```
 <!---
 Copyright 2023 The HuggingFace Team. All rights reserved.
 
@@ -22,7 +23,7 @@ rendered properly in your Markdown viewer.
 
 使用しているDeep Learningライブラリに対して、🤗 Transformersをインストールしてキャッシュを設定、そしてオプションでオフラインで実行できるように 🤗 Transformersを設定します。
 
-🤗 TransformersはPython 3.6+, PyTorch 1.1.0+, TensorFlow 2.0+, Flaxで動作確認しています。 使用しているDeep Learningライブラリに合わせて、以下のインストール方法に従ってください:
+🤗 TransformersはPython 3.9+, PyTorch 1.1.0+, TensorFlow 2.0+, Flaxで動作確認しています。 使用しているDeep Learningライブラリに合わせて、以下のインストール方法に従ってください:
 
 * [PyTorch](https://pytorch.org/get-started/locally/)のインストール手順。
 * [TensorFlow 2.0](https://www.tensorflow.org/install/pip)のインストール手順。
@@ -242,3 +243,4 @@ python examples/pytorch/translation/run_translation.py --model_name_or_path goog
 Hubに保存されているファイルをダウンロードする方法の詳細については、[How to download files from the Hub](https://huggingface.co/docs/hub/how-to-downstream)セクションを参照してください。
 
 </Tip>
+```
