@@ -22,7 +22,7 @@ rendered properly in your Markdown viewer.
 
 Install 🤗 Transformers for whichever deep learning library you're working with, setup your cache, and optionally configure 🤗 Transformers to run offline.
 
-🤗 Transformers is tested on Python 3.6+, PyTorch 1.1.0+, TensorFlow 2.0+, and Flax. Follow the installation instructions below for the deep learning library you are using:
+🤗 Transformers is tested on Python 3.9+, PyTorch 1.1.0+, TensorFlow 2.0+, and Flax. Follow the installation instructions below for the deep learning library you are using:
 
 * [PyTorch](https://pytorch.org/get-started/locally/) installation instructions.
 * [TensorFlow 2.0](https://www.tensorflow.org/install/pip) installation instructions.
