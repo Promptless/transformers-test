@@ -22,7 +22,7 @@ rendered properly in your Markdown viewer.
 
 Installa 🤗 Transformers per qualsiasi libreria di deep learning con cui stai lavorando, imposta la tua cache, e opzionalmente configura 🤗 Transformers per l'esecuzione offline.
 
-🤗 Transformers è testato su Python 3.6+, PyTorch 1.1.0+, TensorFlow 2.0+, e Flax. Segui le istruzioni di installazione seguenti per la libreria di deep learning che stai utilizzando:
+🤗 Transformers è testato su Python 3.9+, PyTorch 1.1.0+, TensorFlow 2.0+, e Flax. Segui le istruzioni di installazione seguenti per la libreria di deep learning che stai utilizzando:
 
 * [PyTorch](https://pytorch.org/get-started/locally/) istruzioni di installazione.
 * [TensorFlow 2.0](https://www.tensorflow.org/install/pip) istruzioni di installazione.
