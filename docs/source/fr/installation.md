@@ -18,7 +18,7 @@ limitations under the License.
 
 Installez 🤗 Transformers pour n'importe quelle librairie d'apprentissage profond avec laquelle vous avez l'habitude de travaillez, configurez votre cache et configurez 🤗 Transformers pour un usage hors ligne (facultatif).
 
-🤗 Transformers est testé avec Python 3.6+, PyTorch 1.1.0+, TensorFlow 2.0+ et Flax.
+🤗 Transformers est testé avec Python 3.9+, PyTorch 1.1.0+, TensorFlow 2.0+ et Flax.
 Consulter les instructions d'installation ci-dessous pour la librairie d'apprentissage profond que vous utilisez:
 
   * Instructions d'installation pour [PyTorch](https://pytorch.org/get-started/locally/).
