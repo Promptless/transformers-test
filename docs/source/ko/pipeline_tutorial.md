@@ -65,10 +65,10 @@ Hub의 모델들은 여러 다양한 언어와 전문분야를 아우르기 때�
 
 ```py
 generator(
-    [
-        "https://huggingface.co/datasets/Narsil/asr_dummy/resolve/main/mlk.flac",
-        "https://huggingface.co/datasets/Narsil/asr_dummy/resolve/main/1.flac",
-    ]
+[
+"https://huggingface.co/datasets/Narsil/asr_dummy/resolve/main/mlk.flac",
+"https://huggingface.co/datasets/Narsil/asr_dummy/resolve/main/1.flac",
+]
 )
 ```
 
@@ -142,24 +142,30 @@ texts = generator(audio_filenames)
 태스크마다 다양한 매개변수를 가지고 있는데요. 원하는 태스크의 API를 참조해서 바꿔볼 수 있는 여러 매개변수를 살펴보세요!
 지금까지 다뤄본 [`~transformers.AutomaticSpeechRecognitionPipeline`]에는 `chunk_length_s` 매개변수가 있습니다. 영화나 1시간 분량의 동영상의 자막 작업을 할 때처럼, 일반적으로 모델이 자체적으로 처리할 수 없는 매우 긴 오디오 파일을 처리할 때 유용하죠.
 
+또한, 새로운 `ImageTextToTextPipeline`을 사용하여 이미지와 텍스트를 입력으로 받아 텍스트를 생성할 수 있습니다. 이 파이프라인은 이미지 설명 생성, 시각적 질문 응답 등 다양한 멀티모달 작업에 유용합니다. 사용 예시는 다음과 같습니다:
+
+```py
+>>> from transformers import pipeline
+>>> pipe = pipeline(task="image-text-to-text", model="Salesforce/blip-image-captioning-base")
+>>> pipe("https://huggingface.co/datasets/Narsil/image_dummy/raw/main/parrots.png", text="A photo of")
+[{'generated_text': 'a photo of two birds'}]
+```
 
 도움이 될 만한 매개변수를 찾지 못했다면 언제든지 [요청](https://github.com/huggingface/transformers/issues/new?assignees=&labels=feature&template=feature-request.yml)해주세요!
-
-
 ## 데이터세트에서 Pipeline 사용하기[[using-pipelines-on-a-dataset]]
 
 파이프라인은 대규모 데이터세트에서도 추론 작업을 할 수 있습니다. 이때 이터레이터를 사용하는 걸 추천드립니다.
 
 ```py
 def data():
-    for i in range(1000):
-        yield f"My example {i}"
+for i in range(1000):
+yield f"My example {i}"
 
 
 pipe = pipe(model="openai-community/gpt2", device=0)
 generated_characters = 0
 for out in pipe(data()):
-    generated_characters += len(out["generated_text"])
+generated_characters += len(out["generated_text"])
 ```
 
 이터레이터 `data()`는 각 결과를 호출마다 생성하고, 파이프라인은 입력이 순회할 수 있는 자료구조임을 자동으로 인식하여 GPU에서 기존 데이터가 처리되는 동안 새로운 데이터를 가져오기 시작합니다.(이때 내부적으로 [DataLoader](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader)를 사용해요.) 이 과정은 전체 데이터세트를 메모리에 적재하지 않고도 GPU에 최대한 빠르게 새로운 작업을 공급할 수 있기 때문에 중요합니다.
@@ -176,7 +182,7 @@ pipe = pipeline(model="hf-internal-testing/tiny-random-wav2vec2", device=0)
 dataset = load_dataset("hf-internal-testing/librispeech_asr_dummy", "clean", split="validation[:10]")
 
 for out in pipe(KeyDataset(dataset["audio"])):
-    print(out)
+print(out)
 ```
 
 
@@ -241,3 +247,53 @@ NLP 태스크를 위해 [`pipeline`]을 사용하는 일도 거의 동일합니�
 ... )
 [{'score': 0.42514941096305847, 'answer': 'us-001', 'start': 16, 'end': 16}]
 ```
+
+### 이미지-텍스트-텍스트 Pipeline[[image-text-to-text-pipeline]]
+
+이미지와 텍스트를 입력으로 받아 텍스트를 생성하는 `ImageTextToTextPipeline`을 사용할 수 있습니다. 이 파이프라인은 이미지 캡셔닝, 이미지 기반 텍스트 생성과 같은 멀티모달 태스크를 수행할 수 있습니다. 이미지는 URL 또는 로컬 경로의 형태로 전달해주세요.
+
+예를 들어, 두 마리의 새가 있는 사진을 설명하고 싶다면:
+
+```py
+>>> from transformers import pipeline
+
+>>> pipe = pipeline(task="image-text-to-text", model="Salesforce/blip-image-captioning-base")
+>>> pipe("https://huggingface.co/datasets/Narsil/image_dummy/raw/main/parrots.png", text="A photo of")
+[{'generated_text': 'a photo of two birds'}]
+```
+
+또는 대화 형식으로 이미지를 설명하고 싶다면:
+
+```py
+>>> from transformers import pipeline
+
+>>> pipe = pipeline("image-text-to-text", model="llava-hf/llava-interleave-qwen-0.5b-hf")
+>>> messages = [
+>>>     {
+>>>         "role": "user",
+>>>         "content": [
+>>>             {
+>>>                 "type": "image",
+>>>                 "url": "https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-VL/assets/demo.jpeg",
+>>>             },
+>>>             {"type": "text", "text": "Describe this image."},
+>>>         ],
+>>>     },
+>>>     {
+>>>         "role": "assistant",
+>>>         "content": [
+>>>             {"type": "text", "text": "There is a dog and"},
+>>>         ],
+>>>     },
+>>> ]
+>>> pipe(text=messages, max_new_tokens=20, return_full_text=False)
+[{'input_text': [{'role': 'user',
+    'content': [{'type': 'image',
+    'url': 'https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-VL/assets/demo.jpeg'},
+    {'type': 'text', 'text': 'Describe this image.'}]},
+{'role': 'assistant',
+    'content': [{'type': 'text', 'text': 'There is a dog and'}]}],
+'generated_text': ' a person in the image. The dog is sitting on the sand, and the person is sitting on'}]
+```
+
+`ImageTextToTextPipeline`은 "image-text-to-text" 태스크 식별자를 사용하여 `pipeline()`에서 로드할 수 있습니다. 사용 가능한 모델 목록은 [huggingface.co/models](https://huggingface.co/models?pipeline_tag=image-text-to-text)에서 확인할 수 있습니다.

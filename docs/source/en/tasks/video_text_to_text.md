@@ -34,7 +34,7 @@ This guide focuses on inference with an instruction-tuned model, [llava-hf/llava
 Let's begin installing the dependencies.
 
 ```bash
-pip install -q transformers accelerate flash_attn 
+pip install -q transformers accelerate flash_attn
 ```
 
 Let's initialize the model and the processor. 
@@ -58,17 +58,16 @@ import requests
 import cv2
 
 def replace_video_with_images(text, frames):
-  return text.replace("<video>", "<image>" * frames)
+    return text.replace("<video>", "<image>" * frames)
 
 def sample_frames(url, num_frames):
-
     response = requests.get(url)
     path_id = str(uuid.uuid4())
 
-    path = f"./{path_id}.mp4" 
+    path = f"./{path_id}.mp4"
 
     with open(path, "wb") as f:
-      f.write(response.content)
+        f.write(response.content)
 
     video = cv2.VideoCapture(path)
     total_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -85,6 +84,25 @@ def sample_frames(url, num_frames):
     return frames
 ```
 
+Let's get our inputs. We will sample frames and concatenate them.
+
+```python
+video_1 = "https://huggingface.co/spaces/merve/llava-interleave/resolve/main/cats_1.mp4"
+video_2 = "https://huggingface.co/spaces/merve/llava-interleave/resolve/main/cats_2.mp4"
+
+video_1 = sample_frames(video_1, 6)
+video_2 = sample_frames(video_2, 6)
+
+videos = video_1 + video_2
+
+videos
+
+# [<PIL.Image.Image image mode=RGB size=1920x1080>,
+# <PIL.Image.Image image mode=RGB size=1920x1080>,
+# <PIL.Image.Image image mode=RGB size=1920x1080>, ...]
+```
+
+Both videos have cats.
 Let's get our inputs. We will sample frames and concatenate them.
 
 ```python

@@ -44,6 +44,7 @@ The original code can be found [here](https://huggingface.co/HuggingFaceM4/idefi
 - The processor has a `do_image_splitting` option. If `True`, each input image will be split into 4 sub-images, and concatenated with the original to form 5 images. This is useful for increasing model performance. Make sure `processor.image_processor.do_image_splitting` is set to `False` if the model was not trained with this option.
 - `text` passed to the processor should have the `<image>` tokens where the images should be inserted. And `<end_of_utterance>` at the end of each utterance if the text is a chat message.
 - The processor has its own `apply_chat_template` method to convert chat messages to text that can then be passed as `text` to the processor.
+- The `post_process_image_text_to_text` method is available for decoding the text output from the model's generated sequences.
 
 Example of how to use the processor on chat messages:
 
@@ -63,12 +64,12 @@ image_2 = Image.open(requests.get(url_2, stream=True).raw)
 images = [image_1, image_2]
 
 messages = [{
-    "role": "user",
-    "content": [
-        {"type": "text", "text": "What’s the difference between these two images?"},
-        {"type": "image"},
-        {"type": "image"},
-    ],
+"role": "user",
+"content": [
+{"type": "text", "text": "What’s the difference between these two images?"},
+{"type": "image"},
+{"type": "image"},
+],
 }]
 
 processor = Idefics2Processor.from_pretrained("HuggingFaceM4/idefics2-8b")
@@ -83,7 +84,7 @@ print(text)
 inputs = processor(images=images, text=text, return_tensors="pt").to(device)
 
 generated_text = model.generate(**inputs, max_new_tokens=500)
-generated_text = processor.batch_decode(generated_text, skip_special_tokens=True)[0]
+generated_text = processor.post_process_image_text_to_text(generated_text)
 print("Generated text:", generated_text)
 ```
 
@@ -103,20 +104,35 @@ image_2 = Image.open(requests.get(url_2, stream=True).raw)
 images = [image_1, image_2]
 
 messages = [{
-    "role": "user",
-    "content": [
-        {"type": "text", "text": "What’s the difference between these two images?"},
-        {"type": "image"},
-        {"type": "image"},
-    ],
+"role": "user",
+"content": [
+{"type": "text", "text": "What’s the difference between these two images?"},
+{"type": "image"},
+{"type": "image"},
+],
 },
 {
-    "role": "assistant",
-    "content": [
-        {"type": "text", "text": "The difference is that one image is about dogs and the other one about cats."},
-    ],
+"role": "assistant",
+"content": [
+{"type": "text", "text": "The difference is that one image is about dogs and the other one about cats."},
+],
 }]
 
+device = "cuda" if torch.cuda.is_available() else "cpu"
+
+processor = Idefics2Processor.from_pretrained("HuggingFaceM4/idefics2-8b")
+model = Idefics2ForConditionalGeneration.from_pretrained("HuggingFaceM4/idefics2-8b")
+model.to(device)
+
+text = processor.apply_chat_template(messages, add_generation_prompt=False)
+inputs = processor(images=images, text=text, return_tensors="pt").to(device)
+
+labels = inputs.input_ids.clone()
+labels[labels == processor.tokenizer.pad_token_id] = -100
+labels[labels == model.config.image_token_id] = -100
+
+inputs["labels"] = labels
+```
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 processor = Idefics2Processor.from_pretrained("HuggingFaceM4/idefics2-8b")
@@ -138,7 +154,6 @@ loss.backward()
 ```
 
 Do note that when training Idefics2 on multi-turn conversations between a user and an assistant, one typically also sets all the tokens corresponding to the user messages to -100.
-
 ## Model optimizations: Flash Attention
 
 The code snippets above showcase inference without any optimization tricks. However, one can drastically speed up the model by leveraging [Flash Attention](../perf_train_gpu_one.md#flash-attention-2), which is a faster implementation of the attention mechanism used inside the model.
@@ -155,8 +170,8 @@ To load and run a model using Flash Attention-2, simply change the code snippet 
 
 ```diff
 model = Idefics2ForConditionalGeneration.from_pretrained(
-    "HuggingFaceM4/idefics2-8b",
-+    torch_dtype=torch.float16,    
+"HuggingFaceM4/idefics2-8b",
++    torch_dtype=torch.float16,
 +    attn_implementation="flash_attention_2",
 ).to(device)
 ```
@@ -177,8 +192,8 @@ Quantizing a model is as simple as passing a `quantization_config` to the model.
 +    bnb_4bit_compute_dtype=torch.float16
 + )
 model = Idefics2ForConditionalGeneration.from_pretrained(
-    "HuggingFaceM4/idefics2-8b",
-+    torch_dtype=torch.float16,    
+"HuggingFaceM4/idefics2-8b",
++    torch_dtype=torch.float16,
 +    quantization_config=quantization_config,
 ).to(device)
 ```

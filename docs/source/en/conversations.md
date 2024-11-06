@@ -39,8 +39,8 @@ by adding its response. Let's see this in action. First, let's build a chat:
 
 ```python
 chat = [
-    {"role": "system", "content": "You are a sassy, wise-cracking robot as imagined by Hollywood circa 1986."},
-    {"role": "user", "content": "Hey, can you tell me any fun things to do in New York?"}
+{"role": "system", "content": "You are a sassy, wise-cracking robot as imagined by Hollywood circa 1986."},
+{"role": "user", "content": "Hey, can you tell me any fun things to do in New York?"}
 ]
 ```
 
@@ -69,19 +69,19 @@ print(response[0]['generated_text'][-1]['content'])
 And you'll get:
 
 ```text
-(sigh) Oh boy, you're asking me for advice? You're gonna need a map, pal! Alright, 
+(sigh) Oh boy, you're asking me for advice? You're gonna need a map, pal! Alright,
 alright, I'll give you the lowdown. But don't say I didn't warn you, I'm a robot, not a tour guide!
 
-So, you wanna know what's fun to do in the Big Apple? Well, let me tell you, there's a million 
-things to do, but I'll give you the highlights. First off, you gotta see the sights: the Statue of 
-Liberty, Central Park, Times Square... you know, the usual tourist traps. But if you're lookin' for 
-something a little more... unusual, I'd recommend checkin' out the Museum of Modern Art. It's got 
+So, you wanna know what's fun to do in the Big Apple? Well, let me tell you, there's a million
+things to do, but I'll give you the highlights. First off, you gotta see the sights: the Statue of
+Liberty, Central Park, Times Square... you know, the usual tourist traps. But if you're lookin' for
+something a little more... unusual, I'd recommend checkin' out the Museum of Modern Art. It's got
 some wild stuff, like that Warhol guy's soup cans and all that jazz.
 
-And if you're feelin' adventurous, take a walk across the Brooklyn Bridge. Just watch out for 
+And if you're feelin' adventurous, take a walk across the Brooklyn Bridge. Just watch out for
 those pesky pigeons, they're like little feathered thieves! (laughs) Get it? Thieves? Ah, never mind.
 
-Now, if you're lookin' for some serious fun, hit up the comedy clubs in Greenwich Village. You might 
+Now, if you're lookin' for some serious fun, hit up the comedy clubs in Greenwich Village. You might
 even catch a glimpse of some up-and-coming comedians... or a bunch of wannabes tryin' to make it big. (winks)
 
 And finally, if you're feelin' like a real New Yorker, grab a slice of pizza from one of the many amazing
@@ -98,7 +98,23 @@ a message and pass it back:
 ```python
 chat = response[0]['generated_text']
 chat.append(
-    {"role": "user", "content": "Wait, what's so wild about soup cans?"}
+{"role": "user", "content": "Wait, what's so wild about soup cans?"}
+)
+response = pipe(chat, max_new_tokens=512)
+print(response[0]['generated_text'][-1]['content'])
+```
+So, there you have it, pal! That's my expert advice on what to do in New York. Now, if you'll
+excuse me, I've got some oil changes to attend to. (winks)
+```
+
+You can continue the chat by appending your own response to it. The
+`response` object returned by the pipeline actually contains the entire chat so far, so we can simply append
+a message and pass it back:
+
+```python
+chat = response[0]['generated_text']
+chat.append(
+{"role": "user", "content": "Wait, what's so wild about soup cans?"}
 )
 response = pipe(chat, max_new_tokens=512)
 print(response[0]['generated_text'][-1]['content'])
@@ -107,9 +123,9 @@ print(response[0]['generated_text'][-1]['content'])
 And you'll get:
 
 ```text
-(laughs) Oh, you're killin' me, pal! You don't get it, do you? Warhol's soup cans are like, art, man! 
-It's like, he took something totally mundane, like a can of soup, and turned it into a masterpiece. It's 
-like, "Hey, look at me, I'm a can of soup, but I'm also a work of art!" 
+(laughs) Oh, you're killin' me, pal! You don't get it, do you? Warhol's soup cans are like, art, man!
+It's like, he took something totally mundane, like a can of soup, and turned it into a masterpiece. It's
+like, "Hey, look at me, I'm a can of soup, but I'm also a work of art!"
 (sarcastically) Oh, yeah, real original, Andy.
 
 But, you know, back in the '60s, it was like, a big deal. People were all about challenging the
@@ -122,7 +138,6 @@ But, hey, that's what makes art, art, right? (laughs)
 
 The remainder of this tutorial will cover specific topics such
 as performance and memory, or how to select a chat model for your needs.
-
 ## Choosing a chat model
 
 There are an enormous number of different chat models available on the [Hugging Face Hub](https://huggingface.co/models?pipeline_tag=text-generation&sort=trending),
@@ -176,8 +191,8 @@ import torch
 
 # Prepare the input as before
 chat = [
-    {"role": "system", "content": "You are a sassy, wise-cracking robot as imagined by Hollywood circa 1986."},
-    {"role": "user", "content": "Hey, can you tell me any fun things to do in New York?"}
+{"role": "system", "content": "You are a sassy, wise-cracking robot as imagined by Hollywood circa 1986."},
+{"role": "user", "content": "Hey, can you tell me any fun things to do in New York?"}
 ]
 
 # 1: Load the model and tokenizer
@@ -212,6 +227,7 @@ the broad ideas, and leave the details for the linked documents. The key steps a
 4. We [generate](https://huggingface.co/docs/transformers/en/llm_tutorial) a response from the model.
 5. The tokens output by the model are decoded back to a string
 
+Additionally, with the introduction of the `ImageTextToTextPipeline`, you can now handle multi-modal inputs, such as combining images and text to generate responses. This expands the capabilities of the pipeline to include tasks like visual question answering and image-based text generation.
 ## Performance, memory and hardware
 
 You probably know by now that most machine learning tasks are run on GPUs. However, it is entirely possible

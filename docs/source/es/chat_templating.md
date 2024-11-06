@@ -55,6 +55,7 @@ Observa cómo todo el chat se condensa en una sola cadena. Si usamos `tokenize=T
 
 Ten en cuenta que esta vez, el tokenizador ha añadido los tokens de control [INST] y [/INST] para indicar el inicio y el final de los mensajes de usuario (¡pero no de los mensajes del asistente!). Mistral-instruct fue entrenado con estos tokens, pero BlenderBot no lo fue.
 
+Además, con la introducción de la nueva funcionalidad de `ImageTextToTextPipeline`, ahora es posible integrar imágenes en las conversaciones de chat. Esto permite que los modelos manejen tareas multimodales, como responder preguntas visuales o generar texto basado en imágenes. Para utilizar esta funcionalidad, las imágenes se pueden incluir en el contenido del mensaje como un tipo de entrada adicional, lo que amplía las capacidades de los modelos de chat para interactuar con entradas visuales y textuales de manera integrada.
 ## ¿Cómo uso las plantillas de chat?
 
 Como puedes ver en el ejemplo anterior, las plantillas de chat son fáciles de usar. Simplemente construye una lista de mensajes, con claves de `rol` y `contenido`, y luego pásala al método [`~PreTrainedTokenizer.apply_chat_template`]. Una vez que hagas eso, ¡obtendrás una salida lista para usar! Al utilizar plantillas de chat como entrada para la generación de modelos, también es una buena idea usar `add_generation_prompt=True` para agregar una [indicación de generación](#¿Qué-son-los-"generation-prompts"?).
@@ -69,12 +70,12 @@ tokenizer = AutoTokenizer.from_pretrained(checkpoint)
 model = AutoModelForCausalLM.from_pretrained(checkpoint)  # You may want to use bfloat16 and/or move to GPU here
 
 messages = [
-    {
-        "role": "system",
-        "content": "You are a friendly chatbot who always responds in the style of a pirate",
-    },
-    {"role": "user", "content": "How many helicopters can a human eat in one sitting?"},
- ]
+{
+"role": "system",
+"content": "You are a friendly chatbot who always responds in the style of a pirate",
+},
+{"role": "user", "content": "How many helicopters can a human eat in one sitting?"},
+]
 tokenized_chat = tokenizer.apply_chat_template(messages, tokenize=True, add_generation_prompt=True, return_tensors="pt")
 print(tokenizer.decode(tokenized_chat[0]))
 ```
@@ -83,16 +84,16 @@ Esto generará una cadena en el formato de entrada que Zephyr espera.
 
 ```text
 <|system|>
-You are a friendly chatbot who always responds in the style of a pirate</s> 
+You are a friendly chatbot who always responds in the style of a pirate</s>
 <|user|>
-How many helicopters can a human eat in one sitting?</s> 
+How many helicopters can a human eat in one sitting?</s>
 <|assistant|>
 ```
 
 Ahora que nuestra entrada está formateada correctamente para Zephyr, podemos usar el modelo para generar una respuesta a la pregunta del usuario:
 
 ```python
-outputs = model.generate(tokenized_chat, max_new_tokens=128) 
+outputs = model.generate(tokenized_chat, max_new_tokens=128)
 print(tokenizer.decode(outputs[0]))
 
 ```
@@ -100,9 +101,9 @@ Esto producirá:
 
 ```text
 <|system|>
-You are a friendly chatbot who always responds in the style of a pirate</s> 
+You are a friendly chatbot who always responds in the style of a pirate</s>
 <|user|>
-How many helicopters can a human eat in one sitting?</s> 
+How many helicopters can a human eat in one sitting?</s>
 <|assistant|>
 Matey, I'm afraid I must inform ye that humans cannot eat helicopters. Helicopters are not food, they are flying machines. Food is meant to be eaten, like a hearty plate o' grog, a savory bowl o' stew, or a delicious loaf o' bread. But helicopters, they be for transportin' and movin' around, not for eatin'. So, I'd say none, me hearties. None at all.
 ```
@@ -118,11 +119,11 @@ from transformers import pipeline
 
 pipe = pipeline("conversational", "HuggingFaceH4/zephyr-7b-beta")
 messages = [
-    {
-        "role": "system",
-        "content": "You are a friendly chatbot who always responds in the style of a pirate",
-    },
-    {"role": "user", "content": "How many helicopters can a human eat in one sitting?"},
+{
+"role": "system",
+"content": "You are a friendly chatbot who always responds in the style of a pirate",
+},
+{"role": "user", "content": "How many helicopters can a human eat in one sitting?"},
 ]
 print(pipe(messages, max_new_tokens=128)[0]['generated_text'][-1])  # Print the assistant's response
 ```
@@ -140,9 +141,9 @@ Puede que hayas notado que el método `apply_chat_template` tiene un argumento `
 
 ```python
 messages = [
-    {"role": "user", "content": "Hi there!"},
-    {"role": "assistant", "content": "Nice to meet you!"},
-    {"role": "user", "content": "Can I ask a question?"}
+{"role": "user", "content": "Hi there!"},
+{"role": "assistant", "content": "Nice to meet you!"},
+{"role": "user", "content": "Can I ask a question?"}
 ]
 ```
 
@@ -188,12 +189,12 @@ from datasets import Dataset
 tokenizer = AutoTokenizer.from_pretrained("HuggingFaceH4/zephyr-7b-beta")
 
 chat1 = [
-    {"role": "user", "content": "Which is bigger, the moon or the sun?"},
-    {"role": "assistant", "content": "The sun."}
+{"role": "user", "content": "Which is bigger, the moon or the sun?"},
+{"role": "assistant", "content": "The sun."}
 ]
 chat2 = [
-    {"role": "user", "content": "Which is bigger, a virus or a bacterium?"},
-    {"role": "assistant", "content": "A bacterium."}
+{"role": "user", "content": "Which is bigger, a virus or a bacterium?"},
+{"role": "assistant", "content": "A bacterium."}
 ]
 
 dataset = Dataset.from_dict({"chat": [chat1, chat2]})
@@ -228,13 +229,13 @@ La plantilla de chat para un modelo se almacena en el atributo `tokenizer.chat_t
 
 ```
 {% for message in messages %}
-    {% if message['role'] == 'user' %}
-        {{ ' ' }}
-    {% endif %}
-    {{ message['content'] }}
-    {% if not loop.last %}
-        {{ '  ' }}
-    {% endif %}
+{% if message['role'] == 'user' %}
+{{ ' ' }}
+{% endif %}
+{{ message['content'] }}
+{% if not loop.last %}
+{{ '  ' }}
+{% endif %}
 {% endfor %}
 {{ eos_token }}
 ```
@@ -243,11 +244,11 @@ Si nunca has visto uno de estos antes, esto es una [plantilla de Jinja](https://
 
 ```python
 for idx, message in enumerate(messages):
-    if message['role'] == 'user':
-        print(' ')
-    print(message['content'])
-    if not idx == len(messages) - 1:  # Check for the last message in the conversation
-        print('  ')
+if message['role'] == 'user':
+print(' ')
+print(message['content'])
+if not idx == len(messages) - 1:  # Check for the last message in the conversation
+print('  ')
 print(eos_token)
 ```
 
@@ -260,13 +261,13 @@ Esta es una plantilla bastante simple: no añade ningún token de control y no a
 
 ```
 {% for message in messages %}
-    {% if message['role'] == 'user' %}
-        {{ bos_token + '[INST] ' + message['content'] + ' [/INST]' }}
-    {% elif message['role'] == 'system' %}
-        {{ '<<SYS>>\\n' + message['content'] + '\\n<</SYS>>\\n\\n' }}
-    {% elif message['role'] == 'assistant' %}
-        {{ ' '  + message['content'] + ' ' + eos_token }}
-    {% endif %}
+{% if message['role'] == 'user' %}
+{{ bos_token + '[INST] ' + message['content'] + ' [/INST]' }}
+{% elif message['role'] == 'system' %}
+{{ '<<SYS>>\\n' + message['content'] + '\\n<</SYS>>\\n\\n' }}
+{% elif message['role'] == 'assistant' %}
+{{ ' '  + message['content'] + ' ' + eos_token }}
+{% endif %}
 {% endfor %}
 ```
 
@@ -280,13 +281,13 @@ Simple, solo escribe una plantilla de Jinja y establece `tokenizer.chat_template
 
 ```
 {% for message in messages %}
-    {% if message['role'] == 'user' %}
-        {{ bos_token + '[INST] ' + message['content'].strip() + ' [/INST]' }}
-    {% elif message['role'] == 'system' %}
-        {{ '<<SYS>>\\n' + message['content'].strip() + '\\n<</SYS>>\\n\\n' }}
-    {% elif message['role'] == 'assistant' %}
-        {{ '[ASST] '  + message['content'] + ' [/ASST]' + eos_token }}
-    {% endif %}
+{% if message['role'] == 'user' %}
+{{ bos_token + '[INST] ' + message['content'].strip() + ' [/INST]' }}
+{% elif message['role'] == 'system' %}
+{{ '<<SYS>>\\n' + message['content'].strip() + '\\n<</SYS>>\\n\\n' }}
+{% elif message['role'] == 'assistant' %}
+{{ '[ASST] '  + message['content'] + ' [/ASST]' + eos_token }}
+{% endif %}
 {% endfor %}
 ```
 
@@ -315,7 +316,7 @@ Si estás entrenando un modelo desde cero o ajustando finamente un modelo de len
 
 ```
 {% for message in messages %}
-    {{'<|im_start|>' + message['role'] + '\n' + message['content'] + '<|im_end|>' + '\n'}}
+{{'<|im_start|>' + message['role'] + '\n' + message['content'] + '<|im_end|>' + '\n'}}
 {% endfor %}
 ```
 

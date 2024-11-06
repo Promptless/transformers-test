@@ -98,6 +98,9 @@ After GPT-2, language models grew even bigger and are now known as *large langua
 
 Optical character recognition (OCR) is a long-standing text recognition task that typically involves several components to understand the image and generate the text. [TrOCR](model_doc/trocr) simplifies the process using an end-to-end Transformer. The encoder is a ViT-style model for image understanding and processes the image as fixed-size patches. The decoder accepts the encoder's hidden states and autoregressively generates text. [Donut](model_doc/donut) is a more general visual document understanding model that doesn't rely on OCR-based approaches. It uses a Swin Transformer as the encoder and multilingual BART as the decoder. Donut is pretrained to read text by predicting the next word based on the image and text annotations. The decoder generates a token sequence given a prompt. The prompt is represented by a special token for each downstream task. For example, document parsing has a special `parsing` token that is combined with the encoder hidden states to parse the document into a structured output format (JSON).
 
+### ImageTextToTextPipeline
+
+The `ImageTextToTextPipeline` is a new addition to the multimodal capabilities of the Transformers library. It allows for generating text from both image and text inputs, enhancing tasks such as visual question answering, image captioning, or image-based text generation. This pipeline supports both single and batch processing and can operate in chat mode, making it versatile for various applications.
 ## Reinforcement learning
 
 <iframe style="border: 1px solid rgba(0, 0, 0, 0.1);" width="1000" height="450" src="https://www.figma.com/embed?embed_host=share&url=https%3A%2F%2Fwww.figma.com%2Ffile%2FiB3Y6RvWYki7ZuKO6tNgZq%2Freinforcement-learning%3Fnode-id%3D0%253A1%26t%3DhPQwdx3HFPWJWnVf-1" allowfullscreen></iframe>

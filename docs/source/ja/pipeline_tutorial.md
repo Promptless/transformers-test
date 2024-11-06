@@ -67,10 +67,10 @@ Hubでは、ブラウザから直接モデルの結果をチェックして、�
 
 ```py
 generator(
-    [
-        "https://huggingface.co/datasets/Narsil/asr_dummy/resolve/main/mlk.flac",
-        "https://huggingface.co/datasets/Narsil/asr_dummy/resolve/main/1.flac",
-    ]
+[
+"https://huggingface.co/datasets/Narsil/asr_dummy/resolve/main/mlk.flac",
+"https://huggingface.co/datasets/Narsil/asr_dummy/resolve/main/1.flac",
+]
 )
 ```
 
@@ -151,24 +151,25 @@ texts = generator(audio_filenames)
 各タスクごとに利用可能な多くのパラメータがありますので、何を調整できるかを確認するために各タスクのAPIリファレンスを確認してください！
 たとえば、[`~transformers.AutomaticSpeechRecognitionPipeline`]には、モデル単体では処理できない非常に長いオーディオファイル（たとえば、映画全体や1時間のビデオの字幕付けなど）で役立つ`chunk_length_s`パラメータがあります。
 
+新たに追加された`ImageTextToTextPipeline`では、画像とテキストを入力として受け取り、テキストを生成することができます。このパイプラインは、画像キャプション生成や視覚的質問応答などのマルチモーダルタスクに役立ちます。`return_full_text`や`return_tensors`などのパラメータを使用して、出力形式を制御することができます。
+
 <!--役立つパラメータが見つからない場合は、[リクエスト](https://github.com/huggingface/transformers/issues/new?assignees=&labels=feature&template=feature-request.yml)してください！-->
 
 役立つパラメータが見つからない場合は、[リクエスト](https://github.com/huggingface/transformers/issues/new?assignees=&labels=feature&template=feature-request.yml)してください！
-
 ## Using pipeline in a dataset
 
 パイプラインは大規模なデータセット上で推論を実行することもできます。これを行う最も簡単な方法は、イテレータを使用することです：
 
 ```py
 def data():
-    for i in range(1000):
-        yield f"My example {i}"
+for i in range(1000):
+yield f"My example {i}"
 
 
 pipe = pipeline(model="openai-community/gpt2", device=0)
 generated_characters = 0
 for out in pipe(data()):
-    generated_characters += len(out[0]["generated_text"])
+generated_characters += len(out[0]["generated_text"])
 ```
 
 イテレーター `data()` は各結果を生成し、パイプラインは自動的に入力が反復可能であることを認識し、データを取得し続けながらGPU上で処理を行います（これは[DataLoader](https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader)を内部で使用しています）。
@@ -187,7 +188,7 @@ pipe = pipeline(model="hf-internal-testing/tiny-random-wav2vec2", device=0)
 dataset = load_dataset("hf-internal-testing/librispeech_asr_dummy", "clean", split="validation[:10]")
 
 for out in pipe(KeyDataset(dataset, "audio")):
-    print(out)
+print(out)
 ```
 
 ## Using pipelines for a webserver
@@ -266,6 +267,23 @@ pip install pytesseract
 
 </Tip>
 
+### ImageTextToTextPipeline
+
+`ImageTextToTextPipeline`は、画像とテキストを入力として受け取り、テキストを生成するためのパイプラインです。このパイプラインは、画像キャプショニングや画像ベースのテキスト生成などのマルチモーダルタスクをサポートします。
+
+```python
+>>> from transformers import pipeline
+
+>>> image_text_to_text = pipeline(task="image-text-to-text", model="llava-hf/llava-onevision-qwen2-0.5b-ov-hf")
+>>> output = image_text_to_text(
+...     images="https://huggingface.co/datasets/Narsil/image_dummy/raw/main/parrots.png",
+...     text="A photo of"
+... )
+>>> output
+[{'generated_text': 'a photo of two birds'}]
+```
+
+このパイプラインは、チャット形式の入力もサポートしており、会話を続けることができます。
 ## Using `pipeline` on large models with 🤗 `accelerate`:
 
 まず、`accelerate` を`pip install accelerate` でインストールしていることを確認してください。

@@ -43,9 +43,9 @@ import torch
 
 device = torch.device("cuda")
 model = AutoModelForImageTextToText.from_pretrained(
-    "HuggingFaceM4/idefics2-8b",
-    torch_dtype=torch.bfloat16,
-    attn_implementation="flash_attention_2",
+"HuggingFaceM4/idefics2-8b",
+torch_dtype=torch.bfloat16,
+attn_implementation="flash_attention_2",
 ).to(device)
 
 processor = AutoProcessor.from_pretrained("HuggingFaceM4/idefics2-8b")
@@ -69,9 +69,9 @@ from PIL import Image
 import requests
 
 img_urls =["https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/cats.png",
-           "https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/bee.jpg"]
+"https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/bee.jpg"]
 images = [Image.open(requests.get(img_urls[0], stream=True).raw),
-          Image.open(requests.get(img_urls[1], stream=True).raw)]
+Image.open(requests.get(img_urls[1], stream=True).raw)]
 ```
 
 Below is an example of the chat template. We can feed conversation turns and the last message as an input by appending it at the end of the template.
@@ -79,26 +79,26 @@ Below is an example of the chat template. We can feed conversation turns and the
 
 ```python
 messages = [
-    {
-        "role": "user",
-        "content": [
-            {"type": "image"},
-            {"type": "text", "text": "What do we see in this image?"},
-        ]
-    },
-    {
-        "role": "assistant",
-        "content": [
-            {"type": "text", "text": "In this image we can see two cats on the nets."},
-        ]
-    },
-    {
-        "role": "user",
-        "content": [
-            {"type": "image"},
-            {"type": "text", "text": "And how about this image?"},
-        ]
-    },
+{
+"role": "user",
+"content": [
+{"type": "image"},
+{"type": "text", "text": "What do we see in this image?"},
+]
+},
+{
+"role": "assistant",
+"content": [
+{"type": "text", "text": "In this image we can see two cats on the nets."},
+]
+},
+{
+"role": "user",
+"content": [
+{"type": "image"},
+{"type": "text", "text": "And how about this image?"},
+]
+},
 ]
 ```
 
@@ -113,19 +113,34 @@ We can now pass the preprocessed inputs to the model.
 
 ```python
 with torch.no_grad():
-    generated_ids = model.generate(**inputs, max_new_tokens=500)
+generated_ids = model.generate(**inputs, max_new_tokens=500)
 generated_texts = processor.batch_decode(generated_ids, skip_special_tokens=True)
 
 print(generated_texts)
 ## ['User: What do we see in this image? \nAssistant: In this image we can see two cats on the nets. \nUser: And how about this image? \nAssistant: In this image we can see flowers, plants and insect.']
 ```
 
+To use the new `ImageTextToTextPipeline` for generating text from image and text inputs, you can initialize the pipeline as follows:
+
+```python
+from transformers import pipeline
+
+pipe = pipeline("image-text-to-text", model="HuggingFaceM4/idefics2-8b")
+```
+
+You can then use the pipeline to generate text by providing image URLs or PIL images along with text prompts:
+
+```python
+outputs = pipe(images=img_urls, text="What do we see in these images?")
+print(outputs)
+```
+
+This will leverage the new pipeline to handle multimodal tasks, offering greater flexibility in text generation.
 ## Streaming
 
 We can use [text streaming](./generation_strategies#streaming) for a better generation experience. Transformers supports streaming with the [`TextStreamer`] or [`TextIteratorStreamer`] classes. We will use the [`TextIteratorStreamer`] with IDEFICS-8B.
 
 Assume we have an application that keeps chat history and takes in the new user input. We will preprocess the inputs as usual and initialize [`TextIteratorStreamer`] to handle the generation in a separate thread. This allows you to stream the generated text tokens in real-time. Any generation arguments can be passed to [`TextIteratorStreamer`].
-
 
 ```python
 import time
@@ -179,7 +194,7 @@ def model_inference(
         acc_text += text_token
         if acc_text.endswith("<end_of_utterance>"):
             acc_text = acc_text[:-18]
-        yield acc_text
+            yield acc_text
 
     thread.join()
 ```
@@ -195,13 +210,12 @@ generator = model_inference(
 )
 
 for value in generator:
-  print(value)
+    print(value)
 
 # In
 # In this
 # In this image ...
 ```
-
 ## Fit models in smaller hardware
 
 VLMs are often large and need to be optimized to fit on smaller hardware. Transformers supports many model quantization libraries, and here we will only show int8 quantization with [Quanto](./quantization/quanto#quanto). int8 quantization offers memory improvements up to 75 percent (if all weights are quantized). However it is no free lunch, since 8-bit is not a CUDA-native precision, the weights are quantized back and forth on the fly, which adds up to latency.
@@ -220,7 +234,7 @@ from transformers import AutoModelForImageTextToText, QuantoConfig
 model_id = "HuggingFaceM4/idefics2-8b"
 quantization_config = QuantoConfig(weights="int8")
 quantized_model = AutoModelForImageTextToText.from_pretrained(
-    model_id, device_map="cuda", quantization_config=quantization_config
+model_id, device_map="cuda", quantization_config=quantization_config
 )
 ```
 

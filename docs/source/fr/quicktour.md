@@ -64,9 +64,24 @@ Le [`pipeline`] est le moyen le plus simple d'utiliser un modèle pré-entraîn�
 | Classification d'audio       | Attribue une catégorie à un fichier audio                                                                    | Audio                | pipeline(task="audio-classification")         |
 | Reconnaissance automatique de la parole | Extrait le discours d'un fichier audio en texte                                                                  | Audio                | pipeline(task="automatic-speech-recognition") |
 | Question réponse visuels    | Etant données une image et une question, répond correctement à une question sur l'image                                   | Modalités multiples  | pipeline(task="vqa")                          |
+| Image-texte à texte          | Génère du texte à partir d'une image et d'un texte donnés                                                    | Modalités multiples  | pipeline(task="image-text-to-text")           |
 
 Commencez par créer une instance de [`pipeline`] et spécifiez la tâche pour laquelle vous souhaitez l'utiliser. Vous pouvez utiliser le [`pipeline`] pour n'importe laquelle des tâches mentionnées dans le tableau précédent. Pour obtenir une liste complète des tâches prises en charge, consultez la documentation de l'[API pipeline](./main_classes/pipelines). Dans ce guide, nous utiliserons le [`pipeline`] pour l'analyse des sentiments à titre d'exemple :
 
+```py
+>>> from transformers import pipeline
+
+>>> classifier = pipeline("sentiment-analysis")
+```
+
+Le [`pipeline`] télécharge et stocke en cache un [modèle pré-entraîné](https://huggingface.co/distilbert/distilbert-base-uncased-finetuned-sst-2-english) et un tokenizer par défaut pour l'analyse des sentiments. Vous pouvez maintenant utiliser le `classifier` sur le texte de votre choix :
+
+```py
+>>> classifier("We are very happy to show you the 🤗 Transformers library.")
+[{'label': 'POSITIVE', 'score': 0.9998}]
+```
+
+Si vous voulez classifier plus qu'un texte, donnez une liste de textes au [`pipeline`] pour obtenir une liste de dictionnaires en retour :
 ```py
 >>> from transformers import pipeline
 
@@ -123,7 +138,6 @@ Extrayez les tableaux de formes d'ondes brutes des quatre premiers échantillons
 ```
 
 Pour les ensembles de données plus importants où les entrées sont volumineuses (comme dans les domaines de la parole ou de la vision), utilisez plutôt un générateur au lieu d'une liste pour charger toutes les entrées en mémoire. Pour plus d'informations, consultez la documentation de l'[API pipeline](./main_classes/pipelines).
-
 ### Utiliser une autre modèle et tokenizer dans le pipeline
 
 Le [`pipeline`] peut être utilisé avec n'importe quel modèle du [Hub](https://huggingface.co/models), ce qui permet d'adapter facilement le [`pipeline`] à d'autres cas d'utilisation. Par exemple, si vous souhaitez un modèle capable de traiter du texte français, utilisez les filtres du Hub pour trouver un modèle approprié. Le premier résultat renvoie un [modèle BERT](https://huggingface.co/nlptown/bert-base-multilingual-uncased-sentiment) multilingue finetuné pour l'analyse des sentiments que vous pouvez utiliser pour le texte français :
@@ -192,8 +206,8 @@ Passez votre texte au tokenizer :
 >>> encoding = tokenizer("We are very happy to show you the 🤗 Transformers library.")
 >>> print(encoding)
 {'input_ids': [101, 11312, 10320, 12495, 19308, 10114, 11391, 10855, 10103, 100, 58263, 13299, 119, 102],
- 'token_type_ids': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
- 'attention_mask': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]}
+'token_type_ids': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+'attention_mask': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]}
 ```
 
 Le tokenizer retourne un dictionnaire contenant :
@@ -269,7 +283,7 @@ Le modèle produit les activations finales dans l'attribut `logits`. Appliquez l
 >>> pt_predictions = nn.functional.softmax(pt_outputs.logits, dim=-1)
 >>> print(pt_predictions)
 tensor([[0.0021, 0.0018, 0.0115, 0.2121, 0.7725],
-        [0.2084, 0.1826, 0.1969, 0.1755, 0.2365]], grad_fn=<SoftmaxBackward0>)
+[0.2084, 0.1826, 0.1969, 0.1755, 0.2365]], grad_fn=<SoftmaxBackward0>)
 ```
 </pt>
 <tf>
@@ -412,61 +426,61 @@ En fonction de votre tâche, vous passerez généralement les paramètres suivan
 
 1. Un [`PreTrainedModel`] ou un [`torch.nn.Module`](https://pytorch.org/docs/stable/nn.html#torch.nn.Module):
 
-   ```py
-   >>> from transformers import AutoModelForSequenceClassification
+```py
+>>> from transformers import AutoModelForSequenceClassification
 
-   >>> model = AutoModelForSequenceClassification.from_pretrained("distilbert/distilbert-base-uncased")
+>>> model = AutoModelForSequenceClassification.from_pretrained("distilbert/distilbert-base-uncased")
    ```
 
 2. [`TrainingArguments`] contient les hyperparamètres du modèle que vous pouvez changer comme le taux d'apprentissage, la taille de l'échantillon, et le nombre d'époques pour s'entraîner. Les valeurs par défaut sont utilisées si vous ne spécifiez pas d'hyperparamètres d'apprentissage :
 
-   ```py
-   >>> from transformers import TrainingArguments
+```py
+>>> from transformers import TrainingArguments
 
-   >>> training_args = TrainingArguments(
-   ...     output_dir="path/to/save/folder/",
-   ...     learning_rate=2e-5,
-   ...     per_device_train_batch_size=8,
-   ...     per_device_eval_batch_size=8,
-   ...     num_train_epochs=2,
-   ... )
+>>> training_args = TrainingArguments(
+...     output_dir="path/to/save/folder/",
+...     learning_rate=2e-5,
+...     per_device_train_batch_size=8,
+...     per_device_eval_batch_size=8,
+...     num_train_epochs=2,
+... )
    ```
 
 3. Une classe de prétraitement comme un tokenizer, un processeur d'images ou un extracteur de caractéristiques :
 
-   ```py
-   >>> from transformers import AutoTokenizer
+```py
+>>> from transformers import AutoTokenizer
 
-   >>> tokenizer = AutoTokenizer.from_pretrained("distilbert/distilbert-base-uncased")
+>>> tokenizer = AutoTokenizer.from_pretrained("distilbert/distilbert-base-uncased")
    ```
 
 4. Chargez un jeu de données :
 
-   ```py
-   >>> from datasets import load_dataset
+```py
+>>> from datasets import load_dataset
 
-   >>> dataset = load_dataset("rotten_tomatoes")  # doctest: +IGNORE_RESULT
+>>> dataset = load_dataset("rotten_tomatoes")  # doctest: +IGNORE_RESULT
    ```
 
 5. Créez une fonction qui transforme le texte du jeu de données en token :
 
-   ```py
-   >>> def tokenize_dataset(dataset):
-   ...     return tokenizer(dataset["text"])
+```py
+>>> def tokenize_dataset(dataset):
+...     return tokenizer(dataset["text"])
    ```
 
    Puis appliquez-la à l'intégralité du jeu de données avec [`~datasets.Dataset.map`]:
 
-   ```py
-   >>> dataset = dataset.map(tokenize_dataset, batched=True)
+```py
+>>> dataset = dataset.map(tokenize_dataset, batched=True)
    ```
 
 6. Un [`DataCollatorWithPadding`] pour créer un échantillon d'exemples à partir de votre jeu de données :
 
-   ```py
-   >>> from transformers import DataCollatorWithPadding
+```py
+>>> from transformers import DataCollatorWithPadding
 
-   >>> data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
+>>> data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
    ```
 
 Maintenant, rassemblez tous ces éléments dans un [`Trainer`] :
@@ -497,52 +511,64 @@ Pour les tâches - comme la traduction ou la génération de résumé - qui util
 </Tip>
 
 Vous pouvez personnaliser le comportement de la boucle d'apprentissage en redéfinissant les méthodes à l'intérieur de [`Trainer`]. Cela vous permet de personnaliser des caractéristiques telles que la fonction de perte, l'optimiseur et le planificateur. Consultez la documentation de [`Trainer`] pour savoir quelles méthodes peuvent être redéfinies.
+Une fois que vous êtes prêt, appelez la fonction [`~Trainer.train`] pour commencer l'entraînement :
+
+```py
+>>> trainer.train()  # doctest: +SKIP
+```
+
+<Tip>
+
+Pour les tâches - comme la traduction ou la génération de résumé - qui utilisent un modèle séquence à séquence, utilisez plutôt les classes [`Seq2SeqTrainer`] et [`Seq2SeqTrainingArguments`].
+
+</Tip>
+
+Vous pouvez personnaliser le comportement de la boucle d'apprentissage en redéfinissant les méthodes à l'intérieur de [`Trainer`]. Cela vous permet de personnaliser des caractéristiques telles que la fonction de perte, l'optimiseur et le planificateur. Consultez la documentation de [`Trainer`] pour savoir quelles méthodes peuvent être redéfinies.
 
 L'autre moyen de personnaliser la boucle d'apprentissage est d'utiliser les [Callbacks](./main_classes/callback). Vous pouvez utiliser les callbacks pour intégrer d'autres bibliothèques et inspecter la boucle d'apprentissage afin de suivre la progression ou d'arrêter l'apprentissage plus tôt. Les callbacks ne modifient rien dans la boucle d'apprentissage elle-même. Pour personnaliser quelque chose comme la fonction de perte, vous devez redéfinir le [`Trainer`] à la place.
-
 ## Entraînement avec TensorFlow
 
 Tous les modèles sont des modèles standard [`tf.keras.Model`](https://www.tensorflow.org/api_docs/python/tf/keras/Model) afin qu'ils puissent être entraînés avec TensorFlow avec l'API [Keras](https://keras.io/). 🤗 Transformers fournit la fonction [`~TFPreTrainedModel.prepare_tf_dataset`] pour charger facilement votre jeu de données comme un `tf.data.Dataset` afin que vous puissiez commencer l'entraînement immédiatement avec les fonctions [`compile`](https://keras.io/api/models/model_training_apis/#compile-method) et [`fit`](https://keras.io/api/models/model_training_apis/#fit-method) de Keras.
 
 1. Vous commencez avec un modèle [`TFPreTrainedModel`] ou [`tf.keras.Model`](https://www.tensorflow.org/api_docs/python/tf/keras/Model) :
 
-   ```py
-   >>> from transformers import TFAutoModelForSequenceClassification
+```py
+>>> from transformers import TFAutoModelForSequenceClassification
 
-   >>> model = TFAutoModelForSequenceClassification.from_pretrained("distilbert/distilbert-base-uncased")
+>>> model = TFAutoModelForSequenceClassification.from_pretrained("distilbert/distilbert-base-uncased")
    ```
 
 2. Une classe de prétraitement comme un tokenizer, un processeur d'images ou un extracteur de caractéristiques :
 
-   ```py
-   >>> from transformers import AutoTokenizer
+```py
+>>> from transformers import AutoTokenizer
 
-   >>> tokenizer = AutoTokenizer.from_pretrained("distilbert/distilbert-base-uncased")
+>>> tokenizer = AutoTokenizer.from_pretrained("distilbert/distilbert-base-uncased")
    ```
 
 3. Créez une fonction qui transforme le texte du jeu de données en token :
 
-   ```py
-   >>> def tokenize_dataset(dataset):
-   ...     return tokenizer(dataset["text"])  # doctest: +SKIP
+```py
+>>> def tokenize_dataset(dataset):
+...     return tokenizer(dataset["text"])  # doctest: +SKIP
    ```
 
 4. Appliquez le tokenizer à l'ensemble du jeu de données avec [`~datasets.Dataset.map`] et passez ensuite le jeu de données et le tokenizer à [`~TFPreTrainedModel.prepare_tf_dataset`]. Vous pouvez également modifier la taille de l'échantillon et mélanger le jeu de données ici si vous le souhaitez :
 
-   ```py
-   >>> dataset = dataset.map(tokenize_dataset)  # doctest: +SKIP
-   >>> tf_dataset = model.prepare_tf_dataset(
-   ...     dataset, batch_size=16, shuffle=True, tokenizer=tokenizer
-   ... )  # doctest: +SKIP
+```py
+>>> dataset = dataset.map(tokenize_dataset)  # doctest: +SKIP
+>>> tf_dataset = model.prepare_tf_dataset(
+...     dataset, batch_size=16, shuffle=True, tokenizer=tokenizer
+... )  # doctest: +SKIP
    ```
 
 5. Une fois que vous êtes prêt, appelez les fonctions `compile` et `fit` pour commencer l'entraînement :
 
-   ```py
-   >>> from tensorflow.keras.optimizers import Adam
+```py
+>>> from tensorflow.keras.optimizers import Adam
 
-   >>> model.compile(optimizer=Adam(3e-5))
-   >>> model.fit(dataset)  # doctest: +SKIP
+>>> model.compile(optimizer=Adam(3e-5))
+>>> model.fit(dataset)  # doctest: +SKIP
    ```
 
 ## Et après ?

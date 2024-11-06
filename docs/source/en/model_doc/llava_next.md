@@ -63,24 +63,24 @@ from transformers import LlavaNextProcessor
 processor = LlavaNextProcessor.from_pretrained("llava-hf/llava-v1.6-mistral-7b-hf")
 
 conversation = [
-    {
-        "role": "user",
-        "content": [
-            {"type": "image"},
-            {"type": "text", "text": "What’s shown in this image?"},
-        ],
-    },
-    {
-        "role": "assistant",
-        "content": [{"type": "text", "text": "This image shows a red stop sign."},]
-    },
-    {
+{
+"role": "user",
+"content": [
+{"type": "image"},
+{"type": "text", "text": "What’s shown in this image?"},
+],
+},
+{
+"role": "assistant",
+"content": [{"type": "text", "text": "This image shows a red stop sign."},]
+},
+{
 
-        "role": "user",
-        "content": [
-            {"type": "text", "text": "Describe the image in more details."},
-        ],
-    },
+"role": "user",
+"content": [
+{"type": "text", "text": "Describe the image in more details."},
+],
+},
 ]
 
 text_prompt = processor.apply_chat_template(conversation, add_generation_prompt=True)
@@ -108,6 +108,12 @@ print(text_prompt)
 ```
 
 [llama3-llava-next-8b-hf](https://huggingface.co/llava-hf/llava-next-8b-hf) requires the following format:
+[llava-v1.6-34b-hf](https://huggingface.co/llava-hf/llava-v1.6-34b-hf) requires the following format:
+```bash
+"<|im_start|>system\nAnswer the questions.<|im_end|><|im_start|>user\n<image>\nWhat is shown in this image?<|im_end|><|im_start|>assistant\n"
+```
+
+[llama3-llava-next-8b-hf](https://huggingface.co/llava-hf/llava-next-8b-hf) requires the following format:
 
 ```bash
 "<|start_header_id|>system<|end_header_id|>\n\nYou are a helpful language and vision assistant. You are able to understand the visual content that the user provides, and assist the user with a variety of tasks using natural language.<|eot_id|><|start_header_id|><|start_header_id|>user<|end_header_id|>\n\n<image>\nWhat is shown in this image?<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n"
@@ -118,7 +124,6 @@ print(text_prompt)
 ```bash
 "<|im_start|>system\nYou are a helpful assistant.<|im_end|>\n<|im_start|>user\n<image>\nWhat is shown in this image?<|im_end|>\n<|im_start|>assistant\n"
 ```
-
 ## Usage example
 
 ### Single image inference
@@ -141,13 +146,13 @@ url = "https://github.com/haotian-liu/LLaVA/blob/1a91fc274d7c35a9b50b3cb29c4247a
 image = Image.open(requests.get(url, stream=True).raw)
 
 conversation = [
-    {
-        "role": "user",
-        "content": [
-            {"type": "image"},
-            {"type": "text", "text": "What is shown in this image?"},
-        ],
-    },
+{
+"role": "user",
+"content": [
+{"type": "image"},
+{"type": "text", "text": "What is shown in this image?"},
+],
+},
 ]
 prompt = processor.apply_chat_template(conversation, add_generation_prompt=True)
 inputs = processor(image, prompt, return_tensors="pt").to("cuda:0")
@@ -184,36 +189,36 @@ image_snowman = Image.open(requests.get(url, stream=True).raw)
 
 # Prepare a batch of two prompts, where the first one is a multi-turn conversation and the second is not
 conversation_1 = [
-    {
-        "role": "user",
-        "content": [
-            {"type": "image"},
-            {"type": "text", "text": "What is shown in this image?"},
-            ],
-    },
-    {
-        "role": "assistant",
-        "content": [
-            {"type": "text", "text": "There is a red stop sign in the image."},
-            ],
-    },
-    {
-        "role": "user",
-        "content": [
-            {"type": "image"},
-            {"type": "text", "text": "What about this image? How many cats do you see?"},
-            ],
-    },
+{
+"role": "user",
+"content": [
+{"type": "image"},
+{"type": "text", "text": "What is shown in this image?"},
+],
+},
+{
+"role": "assistant",
+"content": [
+{"type": "text", "text": "There is a red stop sign in the image."},
+],
+},
+{
+"role": "user",
+"content": [
+{"type": "image"},
+{"type": "text", "text": "What about this image? How many cats do you see?"},
+],
+},
 ]
 
 conversation_2 = [
-    {
-        "role": "user",
-        "content": [
-            {"type": "image"},
-            {"type": "text", "text": "What is shown in this image?"},
-            ],
-    },
+{
+"role": "user",
+"content": [
+{"type": "image"},
+{"type": "text", "text": "What is shown in this image?"},
+],
+},
 ]
 
 prompt_1 = processor.apply_chat_template(conversation_1, add_generation_prompt=True)
@@ -228,7 +233,6 @@ inputs = processor(images=[image_stop, image_cats, image_snowman], text=prompts,
 generate_ids = model.generate(**inputs, max_new_tokens=30)
 processor.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)
 ```
-
 ## Model optimization
 
 ### Quantization using Bitsandbytes
@@ -250,9 +254,9 @@ from transformers import AutoModelForImageTextToText, BitsAndBytesConfig
 
 # specify how to quantize the model
 quantization_config = BitsAndBytesConfig(
-    load_in_4bit=True,
-    bnb_4bit_quant_type="nf4",
-    bnb_4bit_compute_dtype=torch.float16,
+load_in_4bit=True,
+bnb_4bit_quant_type="nf4",
+bnb_4bit_compute_dtype=torch.float16,
 )
 
 model = AutoModelForImageTextToText.from_pretrained("llava-hf/llava-v1.6-mistral-7b-hf", quantization_config=quantization_config, device_map="auto")
@@ -266,10 +270,10 @@ First make sure to install flash-attn. Refer to the [original repository of Flas
 from transformers import AutoModelForImageTextToText
 
 model = AutoModelForImageTextToText.from_pretrained(
-    model_id,
-    torch_dtype=torch.float16,
-    low_cpu_mem_usage=True,
-    use_flash_attention_2=True
+model_id,
+torch_dtype=torch.float16,
+low_cpu_mem_usage=True,
+use_flash_attention_2=True
 ).to(0)
 ```
 

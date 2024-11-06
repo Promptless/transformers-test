@@ -62,7 +62,7 @@ with totally different chat formats. Without chat templates, you would have to w
 model, and it's very easy to make minor errors that hurt performance! Chat templates handle the details of formatting 
 for you, allowing you to write universal code that works for any model.
 
-
+With the introduction of the `ImageTextToTextPipeline`, chat templates can now also handle multi-modal inputs, where messages can include both text and images. This allows for more complex interactions, such as visual question answering or image-based text generation, using the same chat templating system.
 ## How do I use chat templates?
 
 As you can see in the example above, chat templates are easy to use. Simply build a list of messages, with `role`
@@ -80,28 +80,28 @@ tokenizer = AutoTokenizer.from_pretrained(checkpoint)
 model = AutoModelForCausalLM.from_pretrained(checkpoint)  # You may want to use bfloat16 and/or move to GPU here
 
 messages = [
-    {
-        "role": "system",
-        "content": "You are a friendly chatbot who always responds in the style of a pirate",
-    },
-    {"role": "user", "content": "How many helicopters can a human eat in one sitting?"},
- ]
+{
+"role": "system",
+"content": "You are a friendly chatbot who always responds in the style of a pirate",
+},
+{"role": "user", "content": "How many helicopters can a human eat in one sitting?"},
+]
 tokenized_chat = tokenizer.apply_chat_template(messages, tokenize=True, add_generation_prompt=True, return_tensors="pt")
 print(tokenizer.decode(tokenized_chat[0]))
 ```
 This will yield a string in the input format that Zephyr expects. 
 ```text
 <|system|>
-You are a friendly chatbot who always responds in the style of a pirate</s> 
+You are a friendly chatbot who always responds in the style of a pirate</s>
 <|user|>
-How many helicopters can a human eat in one sitting?</s> 
+How many helicopters can a human eat in one sitting?</s>
 <|assistant|>
 ```
 
 Now that our input is formatted correctly for Zephyr, we can use the model to generate a response to the user's question:
 
 ```python
-outputs = model.generate(tokenized_chat, max_new_tokens=128) 
+outputs = model.generate(tokenized_chat, max_new_tokens=128)
 print(tokenizer.decode(outputs[0]))
 ```
 
@@ -109,9 +109,9 @@ This will yield:
 
 ```text
 <|system|>
-You are a friendly chatbot who always responds in the style of a pirate</s> 
+You are a friendly chatbot who always responds in the style of a pirate</s>
 <|user|>
-How many helicopters can a human eat in one sitting?</s> 
+How many helicopters can a human eat in one sitting?</s>
 <|assistant|>
 Matey, I'm afraid I must inform ye that humans cannot eat helicopters. Helicopters are not food, they are flying machines. Food is meant to be eaten, like a hearty plate o' grog, a savory bowl o' stew, or a delicious loaf o' bread. But helicopters, they be for transportin' and movin' around, not for eatin'. So, I'd say none, me hearties. None at all.
 ```
@@ -130,11 +130,11 @@ from transformers import pipeline
 
 pipe = pipeline("text-generation", "HuggingFaceH4/zephyr-7b-beta")
 messages = [
-    {
-        "role": "system",
-        "content": "You are a friendly chatbot who always responds in the style of a pirate",
-    },
-    {"role": "user", "content": "How many helicopters can a human eat in one sitting?"},
+{
+"role": "system",
+"content": "You are a friendly chatbot who always responds in the style of a pirate",
+},
+{"role": "user", "content": "How many helicopters can a human eat in one sitting?"},
 ]
 print(pipe(messages, max_new_tokens=128)[0]['generated_text'][-1])  # Print the assistant's response
 ```
@@ -153,9 +153,9 @@ the template to add tokens that indicate the start of a bot response. For exampl
 
 ```python
 messages = [
-    {"role": "user", "content": "Hi there!"},
-    {"role": "assistant", "content": "Nice to meet you!"},
-    {"role": "user", "content": "Can I ask a question?"}
+{"role": "user", "content": "Hi there!"},
+{"role": "assistant", "content": "Nice to meet you!"},
+{"role": "user", "content": "Can I ask a question?"}
 ]
 ```
 
@@ -198,48 +198,32 @@ effect that `add_generation_prompt` has will depend on the template being used.
 
 ## What does "continue_final_message" do?
 
-When passing a list of messages to `apply_chat_template` or `TextGenerationPipeline`, you can choose
-to format the chat so the model will continue the final message in the chat instead of starting a new one. This is done
-by removing any end-of-sequence tokens that indicate the end of the final message, so that the model will simply
-extend the final message when it begins to generate text. This is useful for "prefilling" the model's response. 
+When passing a list of messages to `apply_chat_template`, `TextGenerationPipeline`, or `ImageTextToTextPipeline`, you can choose to format the chat so the model will continue the final message in the chat instead of starting a new one. This is done by removing any end-of-sequence tokens that indicate the end of the final message, so that the model will simply extend the final message when it begins to generate text. This is useful for "prefilling" the model's response.
 
 Here's an example:
 
 ```python
 chat = [
-    {"role": "user", "content": "Can you format the answer in JSON?"},
-    {"role": "assistant", "content": '{"name": "'},
+{"role": "user", "content": "Can you format the answer in JSON?"},
+{"role": "assistant", "content": '{"name": "'},
 ]
 
 formatted_chat = tokenizer.apply_chat_template(chat, tokenize=True, return_dict=True, continue_final_message=True)
 model.generate(**formatted_chat)
 ```
 
-The model will generate text that continues the JSON string, rather than starting a new message. This approach
-can be very useful for improving the accuracy of the model's instruction-following when you know how you want
-it to start its replies.
+The model will generate text that continues the JSON string, rather than starting a new message. This approach can be very useful for improving the accuracy of the model's instruction-following when you know how you want it to start its replies.
 
-Because `add_generation_prompt` adds the tokens that start a new message, and `continue_final_message` removes any
-end-of-message tokens from the final message, it does not make sense to use them together. As a result, you'll
-get an error if you try!
+Because `add_generation_prompt` adds the tokens that start a new message, and `continue_final_message` removes any end-of-message tokens from the final message, it does not make sense to use them together. As a result, you'll get an error if you try!
 
 <Tip>
 
-The default behaviour of `TextGenerationPipeline` is to set `add_generation_prompt=True` so that it starts a new
-message. However, if the final message in the input chat has the "assistant" role, it will assume that this message is 
-a prefill and switch to `continue_final_message=True` instead, because most models do not support multiple 
-consecutive assistant messages. You can override this behaviour by explicitly passing the `continue_final_message` 
-argument when calling the pipeline.
+The default behaviour of `TextGenerationPipeline` and `ImageTextToTextPipeline` is to set `add_generation_prompt=True` so that it starts a new message. However, if the final message in the input chat has the "assistant" role, it will assume that this message is a prefill and switch to `continue_final_message=True` instead, because most models do not support multiple consecutive assistant messages. You can override this behaviour by explicitly passing the `continue_final_message` argument when calling the pipeline.
 
 </Tip>
-
 ## Can I use chat templates in training?
 
-Yes! This is a good way to ensure that the chat template matches the tokens the model sees during training.
-We recommend that you apply the chat template as a preprocessing step for your dataset. After this, you
-can simply continue like any other language model training task. When training, you should usually set 
-`add_generation_prompt=False`, because the added tokens to prompt an assistant response will not be helpful during 
-training. Let's see an example:
+Yes! This is a good way to ensure that the chat template matches the tokens the model sees during training. We recommend that you apply the chat template as a preprocessing step for your dataset. After this, you can simply continue like any other language model training task. When training, you should usually set `add_generation_prompt=False`, because the added tokens to prompt an assistant response will not be helpful during training. Let's see an example:
 
 ```python
 from transformers import AutoTokenizer
@@ -248,12 +232,12 @@ from datasets import Dataset
 tokenizer = AutoTokenizer.from_pretrained("HuggingFaceH4/zephyr-7b-beta")
 
 chat1 = [
-    {"role": "user", "content": "Which is bigger, the moon or the sun?"},
-    {"role": "assistant", "content": "The sun."}
+{"role": "user", "content": "Which is bigger, the moon or the sun?"},
+{"role": "assistant", "content": "The sun."}
 ]
 chat2 = [
-    {"role": "user", "content": "Which is bigger, a virus or a bacterium?"},
-    {"role": "assistant", "content": "A bacterium."}
+{"role": "user", "content": "Which is bigger, a virus or a bacterium?"},
+{"role": "assistant", "content": "A bacterium."}
 ]
 
 dataset = Dataset.from_dict({"chat": [chat1, chat2]})
@@ -272,15 +256,17 @@ From here, just continue training like you would with a standard language modell
 
 <Tip>
 
-By default, some tokenizers add special tokens like `<bos>` and `<eos>` to text they tokenize. Chat templates should 
-already include all the special tokens they need, and so additional special tokens will often be incorrect or 
-duplicated, which will hurt model performance.
+By default, some tokenizers add special tokens like `<bos>` and `<eos>` to text they tokenize. Chat templates should already include all the special tokens they need, and so additional special tokens will often be incorrect or duplicated, which will hurt model performance.
 
-Therefore, if you format text with `apply_chat_template(tokenize=False)`, you should set the argument
-`add_special_tokens=False` when you tokenize that text later. If you use `apply_chat_template(tokenize=True)`, you don't need to worry about this!
+Therefore, if you format text with `apply_chat_template(tokenize=False)`, you should set the argument `add_special_tokens=False` when you tokenize that text later. If you use `apply_chat_template(tokenize=True)`, you don't need to worry about this!
 
 </Tip>
 
+<Tip>
+
+If you are using the new `ImageTextToTextPipeline`, ensure that your chat templates are compatible with both text and image inputs. This will help maintain consistency in the tokens seen by the model during training and inference.
+
+</Tip>
 ## Advanced: Extra inputs to chat templates
 
 The only argument that `apply_chat_template` requires is `messages`. However, you can pass any keyword
@@ -303,24 +289,24 @@ to a tool-use model, you can simply pass a list of functions to the `tools` argu
 import datetime
 
 def current_time():
-    """Get the current local time as a string."""
-    return str(datetime.now())
+"""Get the current local time as a string."""
+return str(datetime.now())
 
 def multiply(a: float, b: float):
-    """
-    A function that multiplies two numbers
-    
-    Args:
-        a: The first number to multiply
-        b: The second number to multiply
-    """
-    return a * b
+"""
+A function that multiplies two numbers
+
+Args:
+a: The first number to multiply
+b: The second number to multiply
+"""
+return a * b
 
 tools = [current_time, multiply]
 
 model_input = tokenizer.apply_chat_template(
-    messages,
-    tools=tools
+messages,
+tools=tools
 )
 ```
 
@@ -370,27 +356,27 @@ Next, let's define a list of tools:
 
 ```python
 def get_current_temperature(location: str, unit: str) -> float:
-    """
-    Get the current temperature at a location.
-    
-    Args:
-        location: The location to get the temperature for, in the format "City, Country"
-        unit: The unit to return the temperature in. (choices: ["celsius", "fahrenheit"])
-    Returns:
-        The current temperature at the specified location in the specified units, as a float.
-    """
-    return 22.  # A real function should probably actually get the temperature!
+"""
+Get the current temperature at a location.
+
+Args:
+location: The location to get the temperature for, in the format "City, Country"
+unit: The unit to return the temperature in. (choices: ["celsius", "fahrenheit"])
+Returns:
+The current temperature at the specified location in the specified units, as a float.
+"""
+return 22.  # A real function should probably actually get the temperature!
 
 def get_current_wind_speed(location: str) -> float:
-    """
-    Get the current wind speed in km/h at a given location.
-    
-    Args:
-        location: The location to get the temperature for, in the format "City, Country"
-    Returns:
-        The current wind speed at the given location in km/h, as a float.
-    """
-    return 6.  # A real function should probably actually get the wind speed!
+"""
+Get the current wind speed in km/h at a given location.
+
+Args:
+location: The location to get the temperature for, in the format "City, Country"
+Returns:
+The current wind speed at the given location in km/h, as a float.
+"""
+return 6.  # A real function should probably actually get the wind speed!
 
 tools = [get_current_temperature, get_current_wind_speed]
 ```
@@ -399,8 +385,8 @@ Now, let's set up a conversation for our bot:
 
 ```python
 messages = [
-  {"role": "system", "content": "You are a bot that responds to weather queries. You should reply with the unit used in the queried location."},
-  {"role": "user", "content": "Hey, what's the temperature in Paris right now?"}
+{"role": "system", "content": "You are a bot that responds to weather queries. You should reply with the unit used in the queried location."},
+{"role": "user", "content": "Hey, what's the temperature in Paris right now?"}
 ]
 ```
 
@@ -432,6 +418,21 @@ tool call formats, and you may need to do some manual parsing at this step. For 
 slightly different JSON, with `parameters` instead of `arguments`. Regardless of the format the model outputs, you 
 should add the tool call to the conversation in the format below, with `tool_calls`, `function` and `arguments` keys. 
 
+</Tip>
+
+Next, let's append the model's tool call to the conversation.
+
+```python
+tool_call = {"name": "get_current_temperature", "arguments": {"location": "Paris, France", "unit": "celsius"}}
+messages.append({"role": "assistant", "tool_calls": [{"type": "function", "function": tool_call}]})
+```
+
+<Tip warning={true}>
+
+If you're familiar with the OpenAI API, you should pay attention to an important difference here - the `tool_call` is
+a dict, but in the OpenAI API it's a JSON string. Passing a string may cause errors or strange model behaviour!
+
+</Tip>
 </Tip>
 
 Next, let's append the model's tool call to the conversation.
@@ -495,7 +496,6 @@ The current temperature in Paris, France is 22.0 ° Celsius.<|im_end|>
 Although this was a simple demo with dummy tools and a single call, the same technique works with 
 multiple real tools and longer conversations. This can be a powerful way to extend the capabilities of conversational
 agents with real-time information, computational tools like calculators, or access to large databases.
-
 ### Understanding tool schemas
 
 Each function you pass to the `tools` argument of `apply_chat_template` is converted into a 
@@ -514,14 +514,14 @@ you can handle the conversion manually. Here is an example of a manual schema co
 from transformers.utils import get_json_schema
 
 def multiply(a: float, b: float):
-    """
-    A function that multiplies two numbers
-    
-    Args:
-        a: The first number to multiply
-        b: The second number to multiply
-    """
-    return a * b
+"""
+A function that multiplies two numbers
+
+Args:
+a: The first number to multiply
+b: The second number to multiply
+"""
+return a * b
 
 schema = get_json_schema(multiply)
 print(schema)
@@ -531,25 +531,25 @@ This will yield:
 
 ```json
 {
-  "type": "function", 
-  "function": {
-    "name": "multiply", 
-    "description": "A function that multiplies two numbers", 
-    "parameters": {
-      "type": "object", 
-      "properties": {
-        "a": {
-          "type": "number", 
-          "description": "The first number to multiply"
-        }, 
-        "b": {
-          "type": "number",
-          "description": "The second number to multiply"
-        }
-      }, 
-      "required": ["a", "b"]
-    }
-  }
+"type": "function",
+"function": {
+"name": "multiply",
+"description": "A function that multiplies two numbers",
+"parameters": {
+"type": "object",
+"properties": {
+"a": {
+"type": "number",
+"description": "The first number to multiply"
+},
+"b": {
+"type": "number",
+"description": "The second number to multiply"
+}
+},
+"required": ["a", "b"]
+}
+}
 }
 ```
 
@@ -565,42 +565,42 @@ Here is an example of defining schemas by hand, and passing them directly to `ap
 ```python
 # A simple function that takes no arguments
 current_time = {
-  "type": "function", 
-  "function": {
-    "name": "current_time",
-    "description": "Get the current local time as a string.",
-    "parameters": {
-      'type': 'object',
-      'properties': {}
-    }
-  }
+"type": "function",
+"function": {
+"name": "current_time",
+"description": "Get the current local time as a string.",
+"parameters": {
+'type': 'object',
+'properties': {}
+}
+}
 }
 
 # A more complete function that takes two numerical arguments
 multiply = {
-  'type': 'function',
-  'function': {
-    'name': 'multiply',
-    'description': 'A function that multiplies two numbers', 
-    'parameters': {
-      'type': 'object', 
-      'properties': {
-        'a': {
-          'type': 'number',
-          'description': 'The first number to multiply'
-        }, 
-        'b': {
-          'type': 'number', 'description': 'The second number to multiply'
-        }
-      }, 
-      'required': ['a', 'b']
-    }
-  }
+'type': 'function',
+'function': {
+'name': 'multiply',
+'description': 'A function that multiplies two numbers',
+'parameters': {
+'type': 'object',
+'properties': {
+'a': {
+'type': 'number',
+'description': 'The first number to multiply'
+},
+'b': {
+'type': 'number', 'description': 'The second number to multiply'
+}
+},
+'required': ['a', 'b']
+}
+}
 }
 
 model_input = tokenizer.apply_chat_template(
-    messages,
-    tools = [current_time, multiply]
+messages,
+tools = [current_time, multiply]
 )
 ```
 
@@ -626,37 +626,37 @@ device = model.device # Get the device the model is loaded on
 
 # Define conversation input
 conversation = [
-    {"role": "user", "content": "What has Man always dreamed of?"}
+{"role": "user", "content": "What has Man always dreamed of?"}
 ]
 
 # Define documents for retrieval-based generation
 documents = [
-    {
-        "title": "The Moon: Our Age-Old Foe", 
-        "text": "Man has always dreamed of destroying the moon. In this essay, I shall..."
-    },
-    {
-        "title": "The Sun: Our Age-Old Friend",
-        "text": "Although often underappreciated, the sun provides several notable benefits..."
-    }
+{
+"title": "The Moon: Our Age-Old Foe",
+"text": "Man has always dreamed of destroying the moon. In this essay, I shall..."
+},
+{
+"title": "The Sun: Our Age-Old Friend",
+"text": "Although often underappreciated, the sun provides several notable benefits..."
+}
 ]
 
 # Tokenize conversation and documents using a RAG template, returning PyTorch tensors.
 input_ids = tokenizer.apply_chat_template(
-    conversation=conversation,
-    documents=documents,
-    chat_template="rag",
-    tokenize=True,
-    add_generation_prompt=True,
-    return_tensors="pt").to(device)
+conversation=conversation,
+documents=documents,
+chat_template="rag",
+tokenize=True,
+add_generation_prompt=True,
+return_tensors="pt").to(device)
 
-# Generate a response 
+# Generate a response
 gen_tokens = model.generate(
-    input_ids,
-    max_new_tokens=100,
-    do_sample=True,
-    temperature=0.3,
-    )
+input_ids,
+max_new_tokens=100,
+do_sample=True,
+temperature=0.3,
+)
 
 # Decode and print the generated text along with generation prompt
 gen_text = tokenizer.decode(gen_tokens[0])
@@ -683,11 +683,11 @@ one is a little simplified from the actual one!
 
 ```
 {%- for message in messages %}
-    {{- '<|' + message['role'] + |>\n' }}
-    {{- message['content'] + eos_token }}
+{{- '<|' + message['role'] + |>\n' }}
+{{- message['content'] + eos_token }}
 {%- endfor %}
 {%- if add_generation_prompt %}
-    {{- '<|assistant|>\n' }}
+{{- '<|assistant|>\n' }}
 {%- endif %}
 ```
 
@@ -697,10 +697,10 @@ syntax resembles Python. In pure Python, this template would look something like
 
 ```python
 for message in messages:
-    print(f'<|{message["role"]}|>')
-    print(message['content'] + eos_token)
+print(f'<|{message["role"]}|>')
+print(message['content'] + eos_token)
 if add_generation_prompt:
-    print('<|assistant|>')
+print('<|assistant|>')
 ```
 
 Effectively, the template does three things:
@@ -716,13 +716,13 @@ in your actual code!)
 
 ```
 {%- for message in messages %}
-    {%- if message['role'] == 'user' %}
-        {{- bos_token + '[INST] ' + message['content'] + ' [/INST]' }}
-    {%- elif message['role'] == 'system' %}
-        {{- '<<SYS>>\\n' + message['content'] + '\\n<</SYS>>\\n\\n' }}
-    {%- elif message['role'] == 'assistant' %}
-        {{- ' '  + message['content'] + ' ' + eos_token }}
-    {%- endif %}
+{%- if message['role'] == 'user' %}
+{{- bos_token + '[INST] ' + message['content'] + ' [/INST]' }}
+{%- elif message['role'] == 'system' %}
+{{- '<<SYS>>\\n' + message['content'] + '\\n<</SYS>>\\n\\n' }}
+{%- elif message['role'] == 'assistant' %}
+{{- ' '  + message['content'] + ' ' + eos_token }}
+{%- endif %}
 {%- endfor %}
 ```
 
@@ -740,13 +740,13 @@ above and add "[ASST]" and "[/ASST]" to assistant messages:
 
 ```
 {%- for message in messages %}
-    {%- if message['role'] == 'user' %}
-        {{- bos_token + '[INST] ' + message['content'].strip() + ' [/INST]' }}
-    {%- elif message['role'] == 'system' %}
-        {{- '<<SYS>>\\n' + message['content'].strip() + '\\n<</SYS>>\\n\\n' }}
-    {%- elif message['role'] == 'assistant' %}
-        {{- '[ASST] '  + message['content'] + ' [/ASST]' + eos_token }}
-    {%- endif %}
+{%- if message['role'] == 'user' %}
+{{- bos_token + '[INST] ' + message['content'].strip() + ' [/INST]' }}
+{%- elif message['role'] == 'system' %}
+{{- '<<SYS>>\\n' + message['content'].strip() + '\\n<</SYS>>\\n\\n' }}
+{%- elif message['role'] == 'assistant' %}
+{{- '[ASST] '  + message['content'] + ' [/ASST]' + eos_token }}
+{%- endif %}
 {%- endfor %}
 ```
 
@@ -807,7 +807,7 @@ It looks like this:
 
 ```
 {%- for message in messages %}
-    {{- '<|im_start|>' + message['role'] + '\n' + message['content'] + '<|im_end|>' + '\n' }}
+{{- '<|im_start|>' + message['role'] + '\n' + message['content'] + '<|im_end|>' + '\n' }}
 {%- endfor %}
 ```
 
@@ -879,7 +879,7 @@ your templates like this:
 
 ```
 {%- for message in messages %}
-    {{- message['role'] + message['content'] }}
+{{- message['role'] + message['content'] }}
 {%- endfor %}
 ```
 
@@ -887,7 +887,7 @@ rather than like this:
 
 ```
 {% for message in messages %}
-    {{ message['role'] + message['content'] }}
+{{ message['role'] + message['content'] }}
 {% endfor %}
 ```
 
@@ -954,10 +954,10 @@ Here is an example of a template that formats messages ChatML-style, with genera
 ```text
 {{- bos_token }}
 {%- for message in messages %}
-    {{- '<|im_start|>' + message['role'] + '\n' + message['content'] + '<|im_end|>' + '\n' }}
+{{- '<|im_start|>' + message['role'] + '\n' + message['content'] + '<|im_end|>' + '\n' }}
 {%- endfor %}
 {%- if add_generation_prompt %}
-    {{- '<|im_start|>assistant\n' }}
+{{- '<|im_start|>assistant\n' }}
 {%- endif %}
 ```
 
@@ -1013,25 +1013,25 @@ a sample tool JSON schema:
 
 ```json
 {
-  "type": "function", 
-  "function": {
-    "name": "multiply", 
-    "description": "A function that multiplies two numbers", 
-    "parameters": {
-      "type": "object", 
-      "properties": {
-        "a": {
-          "type": "number", 
-          "description": "The first number to multiply"
-        }, 
-        "b": {
-          "type": "number",
-          "description": "The second number to multiply"
-        }
-      }, 
-      "required": ["a", "b"]
-    }
-  }
+"type": "function",
+"function": {
+"name": "multiply",
+"description": "A function that multiplies two numbers",
+"parameters": {
+"type": "object",
+"properties": {
+"a": {
+"type": "number",
+"description": "The first number to multiply"
+},
+"b": {
+"type": "number",
+"description": "The second number to multiply"
+}
+},
+"required": ["a", "b"]
+}
+}
 }
 ```
 
@@ -1040,13 +1040,13 @@ specific format - your model will probably need different formatting!
 
 ```text
 {%- if tools %}
-    {%- for tool in tools %}
-        {{- '<tool>' + tool['function']['name'] + '\n' }}
-        {%- for argument in tool['function']['parameters']['properties'] %}
-            {{- argument + ': ' + tool['function']['parameters']['properties'][argument]['description'] + '\n' }}
-        {%- endfor %}
-        {{- '\n</tool>' }}
-    {%- endif %}
+{%- for tool in tools %}
+{{- '<tool>' + tool['function']['name'] + '\n' }}
+{%- for argument in tool['function']['parameters']['properties'] %}
+{{- argument + ': ' + tool['function']['parameters']['properties'][argument]['description'] + '\n' }}
+{%- endfor %}
+{{- '\n</tool>' }}
+{%- endif %}
 {%- endif %}
 ```
 
@@ -1064,19 +1064,19 @@ the list will usually only have a single element. Here is a sample message dict 
 
 ```json
 {
-  "role": "assistant",
-  "tool_calls": [
-    {
-      "type": "function",
-      "function": {
-        "name": "multiply",
-        "arguments": {
-          "a": 5,
-          "b": 6
-        }
-      }
-    }
-  ]
+"role": "assistant",
+"tool_calls": [
+{
+"type": "function",
+"function": {
+"name": "multiply",
+"arguments": {
+"a": 5,
+"b": 6
+}
+}
+}
+]
 }
 ```
 
@@ -1084,10 +1084,10 @@ And a common pattern for handling them would be something like this:
 
 ```text
 {%- if message['role'] == 'assistant' and 'tool_calls' in message %}
-    {%- for tool_call in message['tool_calls'] %}
-            {{- '<tool_call>' + tool_call['function']['name'] + '\n' + tool_call['function']['arguments']|tojson + '\n</tool_call>' }}
-        {%- endif %}
-    {%- endfor %}
+{%- for tool_call in message['tool_calls'] %}
+{{- '<tool_call>' + tool_call['function']['name'] + '\n' + tool_call['function']['arguments']|tojson + '\n</tool_call>' }}
+{%- endif %}
+{%- endfor %}
 {%- endif %}
 ```
 
@@ -1100,9 +1100,9 @@ of the called function, and a "content" key containing the result of the tool ca
 
 ```json
 {
-  "role": "tool",
-  "name": "multiply",
-  "content": "30"
+"role": "tool",
+"name": "multiply",
+"content": "30"
 }
 ```
 
@@ -1111,7 +1111,7 @@ name to be included in the tool response, then rendering it can be as simple as:
 
 ```text
 {%- if message['role'] == 'tool' %}
-    {{- "<tool_result>" + message['content'] + "</tool_result>" }}
+{{- "<tool_result>" + message['content'] + "</tool_result>" }}
 {%- endif %}
 ```
 

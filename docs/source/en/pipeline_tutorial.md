@@ -77,10 +77,10 @@ If you have several inputs, you can pass your input as a list:
 
 ```py
 transcriber(
-    [
-        "https://huggingface.co/datasets/Narsil/asr_dummy/resolve/main/mlk.flac",
-        "https://huggingface.co/datasets/Narsil/asr_dummy/resolve/main/1.flac",
-    ]
+[
+"https://huggingface.co/datasets/Narsil/asr_dummy/resolve/main/mlk.flac",
+"https://huggingface.co/datasets/Narsil/asr_dummy/resolve/main/1.flac",
+]
 )
 ```
 
@@ -183,14 +183,14 @@ The pipeline can also run inference on a large dataset. The easiest way we recom
 
 ```py
 def data():
-    for i in range(1000):
-        yield f"My example {i}"
+for i in range(1000):
+yield f"My example {i}"
 
 
 pipe = pipeline(model="openai-community/gpt2", device=0)
 generated_characters = 0
 for out in pipe(data()):
-    generated_characters += len(out[0]["generated_text"])
+generated_characters += len(out[0]["generated_text"])
 ```
 
 The iterator `data()` yields each result, and the pipeline automatically
@@ -212,7 +212,7 @@ pipe = pipeline(model="hf-internal-testing/tiny-random-wav2vec2", device=0)
 dataset = load_dataset("hf-internal-testing/librispeech_asr_dummy", "clean", split="validation[:10]")
 
 for out in pipe(KeyDataset(dataset, "audio")):
-    print(out)
+print(out)
 ```
 
 
@@ -292,6 +292,59 @@ pip install pytesseract
 
 </Tip>
 
+### ImageTextToTextPipeline
+
+The `ImageTextToTextPipeline` is a new addition to the multimodal pipelines, allowing for the generation of text given both an image and text input. This is particularly useful for tasks such as image captioning or generating descriptions based on visual content. The pipeline can handle both single and batch processing and supports chat mode for conversational models.
+
+Example usage:
+
+```python
+>>> from transformers import pipeline
+
+>>> pipe = pipeline(task="image-text-to-text", model="Salesforce/blip-image-captioning-base")
+>>> pipe("https://huggingface.co/datasets/Narsil/image_dummy/raw/main/parrots.png", text="A photo of")
+[{'generated_text': 'a photo of two birds'}]
+```
+
+For chat-based models:
+
+```python
+>>> from transformers import pipeline
+
+>>> pipe = pipeline("image-text-to-text", model="llava-hf/llava-interleave-qwen-0.5b-hf")
+>>> messages = [
+>>>     {
+>>>         "role": "user",
+>>>         "content": [
+>>>             {
+>>>                 "type": "image",
+>>>                 "url": "https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-VL/assets/demo.jpeg",
+>>>             },
+>>>             {"type": "text", "text": "Describe this image."},
+>>>         ],
+>>>     },
+>>>     {
+>>>         "role": "assistant",
+>>>         "content": [
+>>>             {"type": "text", "text": "There is a dog and"},
+>>>         ],
+>>>     },
+>>> ]
+>>> pipe(text=messages, max_new_tokens=20, return_full_text=False)
+[{'input_text': [{'role': 'user',
+    'content': [{'type': 'image',
+    'url': 'https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-VL/assets/demo.jpeg'},
+    {'type': 'text', 'text': 'Describe this image.'}]},
+{'role': 'assistant',
+    'content': [{'type': 'text', 'text': 'There is a dog and'}]}],
+'generated_text': ' a person in the image. The dog is sitting on the sand, and the person is sitting on'}]
+```
+
+Learn more about the basics of using a pipeline in the [pipeline tutorial](../pipeline_tutorial).
+
+This image-text to text pipeline can currently be loaded from `pipeline()` using the following task identifier: "image-text-to-text".
+
+See the list of available models on [huggingface.co/models](https://huggingface.co/models?pipeline_tag=image-text-to-text).
 ## Using `pipeline` on large models with 🤗 `accelerate`:
 
 You can easily run `pipeline` on large models using 🤗 `accelerate`! First make sure you have installed `accelerate` with `pip install accelerate`. 
