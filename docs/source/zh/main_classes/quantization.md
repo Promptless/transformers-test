@@ -139,8 +139,9 @@ model = AutoModelForCausalLM.from_pretrained("TheBloke/zephyr-7B-alpha-AWQ", att
 - 安装最新版本的`accelerate`库： 
 `pip install --upgrade accelerate`
 
-请注意，目前GPTQ集成仅支持文本模型，对于视觉、语音或多模态模型可能会遇到预期以外结果。
+- Python 版本要求至少为 3.9
 
+请注意，目前GPTQ集成仅支持文本模型，对于视觉、语音或多模态模型可能会遇到预期以外结果。
 ### 加载和量化模型
 
 GPTQ是一种在使用量化模型之前需要进行权重校准的量化方法。如果您想从头开始对transformers模型进行量化，生成量化模型可能需要一些时间（在Google Colab上对`facebook/opt-350m`模型量化约为5分钟）。
@@ -307,7 +308,7 @@ torch.float32
 ```
 
 
-### FP4 量化 
+### FP4 量化
 
 #### 要求
 

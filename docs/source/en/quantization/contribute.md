@@ -32,7 +32,7 @@ Before integrating a new quantization method into Transformers, ensure the metho
 class Linear4bit(nn.Module):
     def __init__(self, ...):
         ...
-    
+
     def forward(self, x):
         return my_4bit_kernel(x, self.weight, self.bias)
 ```
@@ -44,6 +44,7 @@ This way, Transformers models can be easily quantized by replacing some instance
 
 For some quantization methods, they may require "pre-quantizing" the models through data calibration (e.g., AWQ). In this case, we prefer to only support inference in Transformers and let the third-party library maintained by the ML community deal with the model quantization itself.
 
+- Ensure that the environment meets the minimum Python version requirement of 3.9.
 ## Build a new HFQuantizer class
 
 1. Create a new quantization config class inside [src/transformers/utils/quantization_config.py](https://github.com/huggingface/transformers/blob/abbffc4525566a48a9733639797c812301218b83/src/transformers/utils/quantization_config.py) and make sure to expose the new quantization config inside Transformers main `init` by adding it to the [`_import_structure`](https://github.com/huggingface/transformers/blob/abbffc4525566a48a9733639797c812301218b83/src/transformers/__init__.py#L1088) object of [src/transformers/__init__.py](https://github.com/huggingface/transformers/blob/abbffc4525566a48a9733639797c812301218b83/src/transformers/__init__.py).
@@ -63,6 +64,7 @@ For some quantization methods, they may require "pre-quantizing" the models thro
 5. Write the `_process_model_before_weight_loading` method. In Transformers, the quantized models are initialized first on the `"meta"` device before loading the weights. This means the `_process_model_before_weight_loading` method takes care of manipulating the model skeleton to replace some modules (e.g., `nn.Linear`) with the target modules (quantization modules). You can define a module replacement logic or any other utility method by creating a new file in [transformers/src/integrations/](https://github.com/huggingface/transformers/tree/abbffc4525566a48a9733639797c812301218b83/src/transformers/integrations) and exposing the relevant methods in that folder's `__init__.py` file. The best starting point would be to have a look at another quantization methods such as [quantizer_awq.py](https://github.com/huggingface/transformers/blob/abbffc4525566a48a9733639797c812301218b83/src/transformers/quantizers/quantizer_awq.py).
 
 6. Write the `_process_model_after_weight_loading` method. This method enables implementing additional features that require manipulating the model after loading the weights.
+
 
 7. Document everything! Make sure your quantization method is documented by adding a new file under `docs/source/en/quantization` and adding a new row in the table in `docs/source/en/quantization/overview.md`.
 

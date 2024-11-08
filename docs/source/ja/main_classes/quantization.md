@@ -30,6 +30,8 @@ rendered properly in your Markdown viewer.
 
 以下のコードを実行するには、以下の要件がインストールされている必要があります： 
 
+- Python 3.9 以上が必要です。
+
 - 最新の `AutoGPTQ` ライブラリをインストールする。
 `pip install auto-gptq` をインストールする。
 
@@ -43,7 +45,6 @@ rendered properly in your Markdown viewer.
 `pip install --upgrade accelerate` を実行する。
 
 GPTQ統合は今のところテキストモデルのみをサポートしているので、視覚、音声、マルチモーダルモデルでは予期せぬ挙動に遭遇するかもしれないことに注意してください。
-
 ### Load and quantize a model
 
 GPTQ は、量子化モデルを使用する前に重みのキャリブレーションを必要とする量子化方法です。トランスフォーマー モデルを最初から量子化する場合は、量子化モデルを作成するまでに時間がかかることがあります (`facebook/opt-350m`モデルの Google colab では約 5 分)。
@@ -193,7 +194,7 @@ model_4bit = AutoModelForCausalLM.from_pretrained("facebook/opt-350m", load_in_4
 torch.float32
 ```
 
-### FP4 quantization 
+### FP4 quantization
 
 #### Requirements
 
@@ -442,6 +443,6 @@ Hugging Face エコシステムのアダプターの公式サポートにより�
 
 [[autodoc]] BitsAndBytesConfig
 
-## Quantization with 🤗 `optimum` 
+## Quantization with 🤗 `optimum`
 
 `optimum`でサポートされている量子化方法の詳細については、[Optimum ドキュメント](https://huggingface.co/docs/optimum/index) を参照し、これらが自分のユースケースに適用できるかどうかを確認してください。

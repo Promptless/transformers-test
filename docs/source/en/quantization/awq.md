@@ -127,6 +127,7 @@ The [TheBloke/Mistral-7B-OpenOrca-AWQ](https://huggingface.co/TheBloke/Mistral-7
 
 <figcaption class="text-center text-gray-500 text-lg">Fused module</figcaption>
 
+
 |   Batch Size |   Prefill Length |   Decode Length |   Prefill tokens/s |   Decode tokens/s | Memory (VRAM)   |
 |-------------:|-----------------:|----------------:|-------------------:|------------------:|:----------------|
 |            1 |               32 |              32 |            81.4899 |           80.2569 | 4.00 GB (5.05%) |
@@ -180,6 +181,7 @@ model = AutoModelForCausalLM.from_pretrained(model_id, quantization_config=quant
 
 The parameter `modules_to_fuse` should include:
 
+
 - `"attention"`: The names of the attention layers to fuse in the following order: query, key, value and output projection layer. If you don't want to fuse these layers, pass an empty list.
 - `"layernorm"`: The names of all the LayerNorm layers you want to replace with a custom fused LayerNorm. If you don't want to fuse these layers, pass an empty list.
 - `"mlp"`: The names of the MLP layers you want to fuse into a single MLP layer in the order: (gate (dense, layer, post-attention) / up / down layers).
@@ -231,7 +233,11 @@ Note this feature is supported on AMD GPUs.
 
 </Tip>
 
+<Tip>
 
+**Important:** The minimum required Python version for using `autoawq` is now 3.9. Ensure your environment meets this requirement to avoid compatibility issues.
+
+</Tip>
 ## CPU support
 
 Recent versions of `autoawq` supports CPU with ipex op optimizations. To get started, first install the latest version of `autoawq` by running:
