@@ -18,7 +18,6 @@ rendered properly in your Markdown viewer.
 
 ## `AutoGPTQ` Integration
 
-
 🤗 Transformers には、言語モデルで GPTQ 量子化を実行するための `optimum` API が統合されています。パフォーマンスを大幅に低下させることなく、推論速度を高速化することなく、モデルを 8、4、3、さらには 2 ビットでロードおよび量子化できます。これは、ほとんどの GPU ハードウェアでサポートされています。
 
 量子化モデルの詳細については、以下を確認してください。
@@ -26,9 +25,14 @@ rendered properly in your Markdown viewer.
 - GPTQ 量子化に関する `optimum` [ガイド](https://huggingface.co/docs/optimum/llm_quantization/usage_guides/quantization)
 - バックエンドとして使用される [`AutoGPTQ`](https://github.com/PanQiWei/AutoGPTQ) ライブラリ
 
+### 必要条件
+
+- Python 3.9 以上が必要です。
 ### Requirements
 
-以下のコードを実行するには、以下の要件がインストールされている必要があります： 
+以下のコードを実行するには、以下の要件がインストールされている必要があります：
+
+- Python 3.9 以上が必要です。
 
 - 最新の `AutoGPTQ` ライブラリをインストールする。
 `pip install auto-gptq` をインストールする。
@@ -43,18 +47,18 @@ rendered properly in your Markdown viewer.
 `pip install --upgrade accelerate` を実行する。
 
 GPTQ統合は今のところテキストモデルのみをサポートしているので、視覚、音声、マルチモーダルモデルでは予期せぬ挙動に遭遇するかもしれないことに注意してください。
-
 ### Load and quantize a model
 
 GPTQ は、量子化モデルを使用する前に重みのキャリブレーションを必要とする量子化方法です。トランスフォーマー モデルを最初から量子化する場合は、量子化モデルを作成するまでに時間がかかることがあります (`facebook/opt-350m`モデルの Google colab では約 5 分)。
 
-したがって、GPTQ 量子化モデルを使用するシナリオは 2 つあります。最初の使用例は、ハブで利用可能な他のユーザーによってすでに量子化されたモデルをロードすることです。2 番目の使用例は、モデルを最初から量子化し、保存するかハブにプッシュして、他のユーザーが使用できるようにすることです。それも使ってください。
+**重要:** Python 3.9 以上が必要です。
 
+したがって、GPTQ 量子化モデルを使用するシナリオは 2 つあります。最初の使用例は、ハブで利用可能な他のユーザーによってすでに量子化されたモデルをロードすることです。2 番目の使用例は、モデルを最初から量子化し、保存するかハブにプッシュして、他のユーザーが使用できるようにすることです。それも使ってください。
 #### GPTQ Configuration
 
 モデルをロードして量子化するには、[`GPTQConfig`] を作成する必要があります。データセットを準備するには、`bits`の数、量子化を調整するための`dataset`、およびモデルの`Tokenizer`を渡す必要があります。
 
-```python 
+```python
 model_id = "facebook/opt-125m"
 tokenizer = AutoTokenizer.from_pretrained(model_id)
 gptq_config = GPTQConfig(bits=4, dataset = "c4", tokenizer=tokenizer)
@@ -67,6 +71,7 @@ dataset = ["auto-gptq is an easy-to-use model quantization library with user-fri
 quantization = GPTQConfig(bits=4, dataset = dataset, tokenizer=tokenizer)
 ```
 
+**注意:** Python 3.9 以上が必要です。
 #### Quantization
 
 `from_pretrained` を使用し、`quantization_config` を設定することでモデルを量子化できます。
@@ -91,6 +96,11 @@ model = AutoModelForCausalLM.from_pretrained(model_id, device_map="auto", quanti
 GPTQ 量子化は、現時点ではテキスト モデルでのみ機能します。さらに、量子化プロセスはハードウェアによっては長時間かかる場合があります (NVIDIA A100 を使用した場合、175B モデル = 4 gpu 時間)。モデルの GPTQ 量子化バージョンが存在しない場合は、ハブで確認してください。そうでない場合は、github で要求を送信できます。
 </Tip>
 
+<Tip>
+
+**重要:** `autoawq` を使用するための最低限の Python バージョンは 3.9 です。互換性の問題を避けるために、環境がこの要件を満たしていることを確認してください。
+
+</Tip>
 ### Push quantized model to 🤗 Hub
 
 他の 🤗 モデルと同様に、`push_to_hub` を使用して量子化モデルをハブにプッシュできます。量子化構成は保存され、モデルに沿ってプッシュされます。
@@ -160,8 +170,7 @@ GPTQ を使用してモデルを量子化する方法と、peft を使用して�
 
 ## `bitsandbytes` Integration
 
-🤗 Transformers は、`bitsandbytes` で最もよく使用されるモジュールと緊密に統合されています。数行のコードでモデルを 8 ビット精度でロードできます。
-これは、`bitsandbytes`の `0.37.0`リリース以降、ほとんどの GPU ハードウェアでサポートされています。
+🤗 Transformers は、`bitsandbytes` で最もよく使用されるモジュールと緊密に統合されています。数行のコードでモデルを 8 ビット精度でロードできます。これは、`bitsandbytes`の `0.37.0`リリース以降、ほとんどの GPU ハードウェアでサポートされています。
 
 量子化方法の詳細については、[LLM.int8()](https://arxiv.org/abs/2208.07339) 論文、または [ブログ投稿](https://huggingface.co/blog/hf-bitsandbytes-) をご覧ください。統合）コラボレーションについて。
 
@@ -169,8 +178,9 @@ GPTQ を使用してモデルを量子化する方法と、peft を使用して�
 
 独自の pytorch モデルを量子化したい場合は、🤗 Accelerate ライブラリの [ドキュメント](https://huggingface.co/docs/accelerate/main/en/usage_guides/quantization) をチェックしてください。
 
-`bitsandbytes`統合を使用してできることは次のとおりです
+`bitsandbytes`統合を使用してできることは次のとおりです：
 
+- Python 3.9 以上が必要です。
 ### General usage
 
 モデルが 🤗 Accelerate による読み込みをサポートし、`torch.nn.Linear` レイヤーが含まれている限り、 [`~PreTrainedModel.from_pretrained`] メソッドを呼び出すときに `load_in_8bit` または `load_in_4bit` 引数を使用してモデルを量子化できます。これはどのようなモダリティでも同様に機能するはずです。
@@ -193,20 +203,21 @@ model_4bit = AutoModelForCausalLM.from_pretrained("facebook/opt-350m", load_in_4
 torch.float32
 ```
 
-### FP4 quantization 
+### FP4 quantization
 
 #### Requirements
 
 以下のコード スニペットを実行する前に、以下の要件がインストールされていることを確認してください。
 
+- Python 3.9 以上が必要です。
 - 最新の`bitsandbytes`ライブラリ
-`pip install bitsandbytes>=0.39.0`
+  `pip install bitsandbytes>=0.39.0`
 
 - 最新の`accelerate`をインストールする
-`pip install --upgrade accelerate`
+  `pip install --upgrade accelerate`
 
 - 最新の `transformers` をインストールする
-`pip install --upgrade transformers`
+  `pip install --upgrade transformers`
 
 #### Tips and best practices
 
@@ -217,7 +228,6 @@ torch.float32
 - **トレーニング:** [QLoRA 論文](https://arxiv.org/abs/2305.14314) によると、4 ビット基本モデルをトレーニングする場合 (例: LoRA アダプターを使用)、`bnb_4bit_quant_type='nf4'` を使用する必要があります。 。
 
 - **推論:** 推論の場合、`bnb_4bit_quant_type` はパフォーマンスに大きな影響を与えません。ただし、モデルの重みとの一貫性を保つために、必ず同じ `bnb_4bit_compute_dtype` および `torch_dtype` 引数を使用してください。
-
 
 #### Load a large model in 4bit
 
@@ -238,7 +248,6 @@ model = AutoModelForCausalLM.from_pretrained(model_id, device_map="auto", load_i
 モデルが 4 ビットでロードされると、現時点では量子化された重みをハブにプッシュすることはできないことに注意してください。 4 ビットの重みはまだサポートされていないため、トレーニングできないことにも注意してください。ただし、4 ビット モデルを使用して追加のパラメーターをトレーニングすることもできます。これについては次のセクションで説明します。
 
 </Tip>
-
 ### Load a large model in 8bit
 
 `.from_pretrained` メソッドを呼び出すときに `load_in_8bit=True` 引数を使用すると、メモリ要件をおよそ半分にしてモデルをロードできます。
@@ -292,8 +301,8 @@ NF4 データ型を使用することもできます。これは、正規分布�
 from transformers import BitsAndBytesConfig
 
 nf4_config = BitsAndBytesConfig(
-    load_in_4bit=True,
-    bnb_4bit_quant_type="nf4",
+load_in_4bit=True,
+bnb_4bit_quant_type="nf4",
 )
 
 model_nf4 = AutoModelForCausalLM.from_pretrained(model_id, quantization_config=nf4_config)
@@ -307,8 +316,8 @@ model_nf4 = AutoModelForCausalLM.from_pretrained(model_id, quantization_config=n
 from transformers import BitsAndBytesConfig
 
 double_quant_config = BitsAndBytesConfig(
-    load_in_4bit=True,
-    bnb_4bit_use_double_quant=True,
+load_in_4bit=True,
+bnb_4bit_use_double_quant=True,
 )
 
 model_double_quant = AutoModelForCausalLM.from_pretrained(model_id, quantization_config=double_quant_config)
@@ -368,20 +377,20 @@ quantization_config = BitsAndBytesConfig(llm_int8_enable_fp32_cpu_offload=True)
 
 ```python
 device_map = {
-    "transformer.word_embeddings": 0,
-    "transformer.word_embeddings_layernorm": 0,
-    "lm_head": "cpu",
-    "transformer.h": 0,
-    "transformer.ln_f": 0,
+"transformer.word_embeddings": 0,
+"transformer.word_embeddings_layernorm": 0,
+"lm_head": "cpu",
+"transformer.h": 0,
+"transformer.ln_f": 0,
 }
 ```
 
 そして、次のようにモデルをロードします。
 ```python
 model_8bit = AutoModelForCausalLM.from_pretrained(
-    "bigscience/bloom-1b7",
-    device_map=device_map,
-    quantization_config=quantization_config,
+"bigscience/bloom-1b7",
+device_map=device_map,
+quantization_config=quantization_config,
 )
 ```
 
@@ -399,13 +408,13 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 model_id = "bigscience/bloom-1b7"
 
 quantization_config = BitsAndBytesConfig(
-    llm_int8_threshold=10,
+llm_int8_threshold=10,
 )
 
 model_8bit = AutoModelForCausalLM.from_pretrained(
-    model_id,
-    device_map=device_map,
-    quantization_config=quantization_config,
+model_id,
+device_map=device_map,
+quantization_config=quantization_config,
 )
 tokenizer = AutoTokenizer.from_pretrained(model_id)
 ```
@@ -420,13 +429,13 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 model_id = "bigscience/bloom-1b7"
 
 quantization_config = BitsAndBytesConfig(
-    llm_int8_skip_modules=["lm_head"],
+llm_int8_skip_modules=["lm_head"],
 )
 
 model_8bit = AutoModelForCausalLM.from_pretrained(
-    model_id,
-    device_map=device_map,
-    quantization_config=quantization_config,
+model_id,
+device_map=device_map,
+quantization_config=quantization_config,
 )
 tokenizer = AutoTokenizer.from_pretrained(model_id)
 ```
@@ -442,6 +451,6 @@ Hugging Face エコシステムのアダプターの公式サポートにより�
 
 [[autodoc]] BitsAndBytesConfig
 
-## Quantization with 🤗 `optimum` 
+## Quantization with 🤗 `optimum`
 
 `optimum`でサポートされている量子化方法の詳細については、[Optimum ドキュメント](https://huggingface.co/docs/optimum/index) を参照し、これらが自分のユースケースに適用できるかどうかを確認してください。

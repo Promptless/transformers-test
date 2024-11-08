@@ -18,7 +18,7 @@ rendered properly in your Markdown viewer.
 
 <Tip>
 
-Try GPTQ quantization with PEFT in this [notebook](https://colab.research.google.com/drive/1_TIrmuKOFhuRRiTWN94iLKUFu6ZX4ceb?usp=sharing) and learn more about it's details in this [blog post](https://huggingface.co/blog/gptq-integration)!
+Try GPTQ quantization with PEFT in this [notebook](https://colab.research.google.com/drive/1_TIrmuKOFhuRRiTWN94iLKUFu6ZX4ceb?usp=sharing) and learn more about its details in this [blog post](https://huggingface.co/blog/gptq-integration)!
 
 </Tip>
 
@@ -30,6 +30,12 @@ Before you begin, make sure the following libraries are installed:
 pip install auto-gptq
 pip install --upgrade accelerate optimum transformers
 ```
+
+<Tip>
+
+**Important:** The minimum required Python version for using `auto-gptq` is now 3.9. Ensure your environment meets this requirement to avoid compatibility issues.
+
+</Tip>
 
 To quantize a model (currently only supported for text models), you need to create a [`GPTQConfig`] class and set the number of bits to quantize to, a dataset to calibrate the weights for quantization, and a tokenizer to prepare the dataset.
 
@@ -78,6 +84,21 @@ You could also save your quantized model locally with the [`~PreTrainedModel.sav
 ```py
 quantized_model.save_pretrained("opt-125m-gptq")
 tokenizer.save_pretrained("opt-125m-gptq")
+```
+</Tip>
+
+Once your model is quantized, you can push the model and tokenizer to the Hub where it can be easily shared and accessed. Use the [`~PreTrainedModel.push_to_hub`] method to save the [`GPTQConfig`]:
+
+```py
+quantized_model.push_to_hub("opt-125m-gptq")
+tokenizer.push_to_hub("opt-125m-gptq")
+```
+
+You could also save your quantized model locally with the [`~PreTrainedModel.save_pretrained`] method. If the model was quantized with the `device_map` parameter, make sure to move the entire model to a GPU or CPU before saving it. For example, to save the model on a CPU:
+
+```py
+quantized_model.save_pretrained("opt-125m-gptq")
+tokenizer.save_pretrained("opt-125m-gptq")
 
 # if quantized with device_map set
 quantized_model.to("cpu")
@@ -91,7 +112,6 @@ from transformers import AutoModelForCausalLM
 
 model = AutoModelForCausalLM.from_pretrained("{your_username}/opt-125m-gptq", device_map="auto")
 ```
-
 ## ExLlama
 
 [ExLlama](https://github.com/turboderp/exllama) is a Python/C++/CUDA implementation of the [Llama](model_doc/llama) model that is designed for faster inference with 4-bit GPTQ weights (check out these [benchmarks](https://github.com/huggingface/optimum/tree/main/tests/benchmark#gptq-benchmark)). The ExLlama kernel is activated by default when you create a [`GPTQConfig`] object. To boost inference speed even further, use the [ExLlamaV2](https://github.com/turboderp/exllamav2) kernels by configuring the `exllama_config` parameter:

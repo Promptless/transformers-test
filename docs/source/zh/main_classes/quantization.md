@@ -22,7 +22,6 @@ AWQ方法已经在[*AWQ: Activation-aware Weight Quantization for LLM Compressio
 
 我们现在支持使用任何AWQ模型进行推理，这意味着任何人都可以加载和使用在Hub上推送或本地保存的AWQ权重。请注意，使用AWQ需要访问NVIDIA GPU。目前不支持CPU推理。
 
-
 ### 量化一个模型
 
 我们建议用户查看生态系统中不同的现有工具，以使用AWQ算法对其模型进行量化，例如：
@@ -31,18 +30,18 @@ AWQ方法已经在[*AWQ: Activation-aware Weight Quantization for LLM Compressio
 - [`autoawq`](https://github.com/casper-hansen/AutoAWQ)，来自[`casper-hansen`](https://github.com/casper-hansen)
 - Intel neural compressor，来自Intel - 通过[`optimum-intel`](https://huggingface.co/docs/optimum/main/en/intel/optimization_inc)使用
 
-生态系统中可能存在许多其他工具，请随时提出PR将它们添加到列表中。
-目前与🤗 Transformers的集成仅适用于使用`autoawq`和`llm-awq`量化后的模型。大多数使用`auto-awq`量化的模型可以在🤗 Hub的[`TheBloke`](https://huggingface.co/TheBloke)命名空间下找到，要使用`llm-awq`对模型进行量化，请参阅[`llm-awq`](https://github.com/mit-han-lab/llm-awq/)的示例文件夹中的[`convert_to_hf.py`](https://github.com/mit-han-lab/llm-awq/blob/main/examples/convert_to_hf.py)脚本。
-
+生态系统中可能存在许多其他工具，请随时提出PR将它们添加到列表中。 目前与🤗 Transformers的集成仅适用于使用`autoawq`和`llm-awq`量化后的模型。大多数使用`auto-awq`量化的模型可以在🤗 Hub的[`TheBloke`](https://huggingface.co/TheBloke)命名空间下找到，要使用`llm-awq`对模型进行量化，请参阅[`llm-awq`](https://github.com/mit-han-lab/llm-awq/)的示例文件夹中的[`convert_to_hf.py`](https://github.com/mit-han-lab/llm-awq/blob/main/examples/convert_to_hf.py)脚本。
 
 ### 加载一个量化的模型
 
 您可以使用`from_pretrained`方法从Hub加载一个量化模型。通过检查模型配置文件（`configuration.json`）中是否存在`quantization_config`属性，来进行确认推送的权重是量化的。您可以通过检查字段`quantization_config.quant_method`来确认模型是否以AWQ格式进行量化，该字段应该设置为`"awq"`。请注意，为了性能原因，默认情况下加载模型将设置其他权重为`float16`。如果您想更改这种设置，可以通过将`torch_dtype`参数设置为`torch.float32`或`torch.bfloat16`。在下面的部分中，您可以找到一些示例片段和notebook。
 
+### 环境要求
 
+- Python 版本要求至少为 3.9
 ## 示例使用
 
-首先，您需要安装[`autoawq`](https://github.com/casper-hansen/AutoAWQ)库
+首先，您需要安装[`autoawq`](https://github.com/casper-hansen/AutoAWQ)库。请注意，Python 版本要求至少为 3.9。
 
 ```bash
 pip install autoawq
@@ -112,7 +111,6 @@ model = AutoModelForCausalLM.from_pretrained("TheBloke/zephyr-7B-alpha-AWQ", att
 ### AwqConfig
 
 [[autodoc]] AwqConfig
-
 ## `AutoGPTQ` 集成
 
 🤗 Transformers已经整合了`optimum` API，用于对语言模型执行GPTQ量化。您可以以8、4、3甚至2位加载和量化您的模型，而性能无明显下降，并且推理速度更快！这受到大多数GPU硬件的支持。
@@ -122,7 +120,9 @@ model = AutoModelForCausalLM.from_pretrained("TheBloke/zephyr-7B-alpha-AWQ", att
 - `optimum`关于GPTQ量化的[指南](https://huggingface.co/docs/optimum/llm_quantization/usage_guides/quantization)
 - 用作后端的[`AutoGPTQ`](https://github.com/PanQiWei/AutoGPTQ)库
 
+### 要求
 
+- Python 版本要求至少为 3.9
 ### 要求
 
 为了运行下面的代码，您需要安装：
@@ -139,27 +139,26 @@ model = AutoModelForCausalLM.from_pretrained("TheBloke/zephyr-7B-alpha-AWQ", att
 - 安装最新版本的`accelerate`库： 
 `pip install --upgrade accelerate`
 
-请注意，目前GPTQ集成仅支持文本模型，对于视觉、语音或多模态模型可能会遇到预期以外结果。
+- Python 版本要求至少为 3.9
 
+请注意，目前GPTQ集成仅支持文本模型，对于视觉、语音或多模态模型可能会遇到预期以外结果。
 ### 加载和量化模型
 
 GPTQ是一种在使用量化模型之前需要进行权重校准的量化方法。如果您想从头开始对transformers模型进行量化，生成量化模型可能需要一些时间（在Google Colab上对`facebook/opt-350m`模型量化约为5分钟）。
 
 因此，有两种不同的情况下您可能想使用GPTQ量化模型。第一种情况是加载已经由其他用户在Hub上量化的模型，第二种情况是从头开始对您的模型进行量化并保存或推送到Hub，以便其他用户也可以使用它。
 
-
 #### GPTQ 配置
 
 为了加载和量化一个模型，您需要创建一个[`GPTQConfig`]。您需要传递`bits`的数量，一个用于校准量化的`dataset`，以及模型的`tokenizer`以准备数据集。
 
-```python 
+```python
 model_id = "facebook/opt-125m"
 tokenizer = AutoTokenizer.from_pretrained(model_id)
 gptq_config = GPTQConfig(bits=4, dataset = "c4", tokenizer=tokenizer)
 ```
 
 请注意，您可以将自己的数据集以字符串列表形式传递到模型。然而，强烈建议您使用GPTQ论文中提供的数据集。
-
 
 ```python
 dataset = ["auto-gptq is an easy-to-use model quantization library with user-friendly apis, based on GPTQ algorithm."]
@@ -173,13 +172,11 @@ quantization = GPTQConfig(bits=4, dataset = dataset, tokenizer=tokenizer)
 ```python
 from transformers import AutoModelForCausalLM
 model = AutoModelForCausalLM.from_pretrained(model_id, quantization_config=gptq_config)
-
 ```
 
 请注意，您需要一个GPU来量化模型。我们将模型放在cpu中，并将模块来回移动到gpu中，以便对其进行量化。
 
 如果您想在使用 CPU 卸载的同时最大化 GPU 使用率，您可以设置 `device_map = "auto"`。
-
 
 ```python
 from transformers import AutoModelForCausalLM
@@ -188,11 +185,15 @@ model = AutoModelForCausalLM.from_pretrained(model_id, device_map="auto", quanti
 
 请注意，不支持磁盘卸载。此外，如果由于数据集而内存不足，您可能需要在`from_pretrained`中设置`max_memory`。查看这个[指南](https://huggingface.co/docs/accelerate/usage_guides/big_modeling#designing-a-device-map)以了解有关`device_map`和`max_memory`的更多信息。
 
-
 <Tip warning={true}>
-目前，GPTQ量化仅适用于文本模型。此外，量化过程可能会花费很多时间，具体取决于硬件性能（175B模型在NVIDIA A100上需要4小时）。请在Hub上检查是否有模型的GPTQ量化版本。如果没有，您可以在GitHub上提交需求。 
+目前，GPTQ量化仅适用于文本模型。此外，量化过程可能会花费很多时间，具体取决于硬件性能（175B模型在NVIDIA A100上需要4小时）。请在Hub上检查是否有模型的GPTQ量化版本。如果没有，您可以在GitHub上提交需求。
 </Tip>
 
+<Tip>
+
+**重要提示：** 使用 `autoawq` 的最低 Python 版本要求现在为 3.9。请确保您的环境满足此要求以避免兼容性问题。
+
+</Tip>
 ### 推送量化模型到 🤗 Hub
 
 您可以使用`push_to_hub`将量化模型像任何模型一样推送到Hub。量化配置将与模型一起保存和推送。
@@ -266,6 +267,7 @@ model = AutoModelForCausalLM.from_pretrained("{your_username}/opt-125m-gptq", de
 
 请查看 Google Colab [notebook](https://colab.research.google.com/drive/1_TIrmuKOFhuRRiTWN94ilkUFu6ZX4ceb?usp=sharing)，了解如何使用GPTQ量化您的模型以及如何使用peft微调量化模型。
 
+- Python 版本要求至少为 3.9
 ### GPTQConfig
 
 [[autodoc]] GPTQConfig
@@ -307,12 +309,13 @@ torch.float32
 ```
 
 
-### FP4 量化 
+### FP4 量化
 
 #### 要求
 
 确保在运行以下代码段之前已完成以下要求：
 
+- Python 版本要求至少为 3.9
 - 最新版本 `bitsandbytes` 库
 `pip install bitsandbytes>=0.39.0`
 
@@ -323,7 +326,6 @@ torch.float32
 `pip install --upgrade transformers`
 
 #### 提示和最佳实践
-
 
 - **高级用法：** 请参考 [此 Google Colab notebook](https://colab.research.google.com/drive/1ge2F1QSK8Q7h0hn3YKuBCOAS0bK8E0wf) 以获取 4 位量化高级用法和所有可选选项。
 
@@ -352,7 +354,6 @@ model = AutoModelForCausalLM.from_pretrained(model_id, device_map="auto", load_i
 需要注意的是，一旦模型以 4 位量化方式加载，就无法将量化后的权重推送到 Hub 上。此外，您不能训练 4 位量化权重，因为目前尚不支持此功能。但是，您可以使用 4 位量化模型来训练额外参数，这将在下一部分中介绍。
 
 </Tip>
-
 ### 加载 8 位量化的大模型
 
 您可以通过在调用 `.from_pretrained` 方法时使用 `load_in_8bit=True` 参数，将内存需求大致减半来加载模型
@@ -412,8 +413,8 @@ quantization_config = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_compute_dty
 from transformers import BitsAndBytesConfig
 
 nf4_config = BitsAndBytesConfig(
-    load_in_4bit=True,
-    bnb_4bit_quant_type="nf4",
+load_in_4bit=True,
+bnb_4bit_quant_type="nf4",
 )
 
 model_nf4 = AutoModelForCausalLM.from_pretrained(model_id, quantization_config=nf4_config)
@@ -427,8 +428,8 @@ model_nf4 = AutoModelForCausalLM.from_pretrained(model_id, quantization_config=n
 from transformers import BitsAndBytesConfig
 
 double_quant_config = BitsAndBytesConfig(
-    load_in_4bit=True,
-    bnb_4bit_use_double_quant=True,
+load_in_4bit=True,
+bnb_4bit_use_double_quant=True,
 )
 
 model_double_quant = AutoModelForCausalLM.from_pretrained(model_id, quantization_config=double_quant_config)
@@ -489,11 +490,11 @@ quantization_config = BitsAndBytesConfig(llm_int8_enable_fp32_cpu_offload=True)
 
 ```python
 device_map = {
-    "transformer.word_embeddings": 0,
-    "transformer.word_embeddings_layernorm": 0,
-    "lm_head": "cpu",
-    "transformer.h": 0,
-    "transformer.ln_f": 0,
+"transformer.word_embeddings": 0,
+"transformer.word_embeddings_layernorm": 0,
+"lm_head": "cpu",
+"transformer.h": 0,
+"transformer.ln_f": 0,
 }
 ```
 
@@ -501,9 +502,9 @@ device_map = {
 
 ```python
 model_8bit = AutoModelForCausalLM.from_pretrained(
-    "bigscience/bloom-1b7",
-    device_map=device_map,
-    quantization_config=quantization_config,
+"bigscience/bloom-1b7",
+device_map=device_map,
+quantization_config=quantization_config,
 )
 ```
 
@@ -521,13 +522,13 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 model_id = "bigscience/bloom-1b7"
 
 quantization_config = BitsAndBytesConfig(
-    llm_int8_threshold=10,
+llm_int8_threshold=10,
 )
 
 model_8bit = AutoModelForCausalLM.from_pretrained(
-    model_id,
-    device_map=device_map,
-    quantization_config=quantization_config,
+model_id,
+device_map=device_map,
+quantization_config=quantization_config,
 )
 tokenizer = AutoTokenizer.from_pretrained(model_id)
 ```
@@ -543,13 +544,13 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 model_id = "bigscience/bloom-1b7"
 
 quantization_config = BitsAndBytesConfig(
-    llm_int8_skip_modules=["lm_head"],
+llm_int8_skip_modules=["lm_head"],
 )
 
 model_8bit = AutoModelForCausalLM.from_pretrained(
-    model_id,
-    device_map=device_map,
-    quantization_config=quantization_config,
+model_id,
+device_map=device_map,
+quantization_config=quantization_config,
 )
 tokenizer = AutoTokenizer.from_pretrained(model_id)
 ```
